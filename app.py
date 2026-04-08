@@ -1,21 +1,28 @@
-import streamlit as st
+import streamlit as st 
 import pandas as pd
 import datetime
-import os
 
 from sklearn.preprocessing import LabelEncoder
 from sklearn.tree import DecisionTreeClassifier
 
 # ======================
-# DETEKSI ONLINE / OFFLINE
+# KONEKSI DATABASE (AUTO SWITCH)
 # ======================
-ONLINE = os.getenv("STREAMLIT_SERVER_RUNNING") is not None
+try:
+    import mysql.connector
 
-# ======================
-# KONEKSI DATABASE
-# ======================
-if ONLINE:
+    conn = mysql.connector.connect(
+        host="localhost",
+        user="root",
+        password="091206",  # ganti jika perlu
+        database="kas_siswa"
+    )
+    cursor = conn.cursor()
+    DB_MODE = "MYSQL"
+
+except:
     import sqlite3
+
     conn = sqlite3.connect("kas.db", check_same_thread=False)
     cursor = conn.cursor()
 
@@ -29,20 +36,13 @@ if ONLINE:
     ''')
     conn.commit()
 
-else:
-    import mysql.connector
-    conn = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="091206",  # GANTI JIKA PERLU
-        database="kas_siswa"
-    )
-    cursor = conn.cursor()
+    DB_MODE = "SQLITE"
 
 # ======================
 # UI TITLE
 # ======================
 st.title("📊 Aplikasi Uang Kas Siswa + AI")
+st.caption(f"Mode Database: {DB_MODE}")
 
 # ======================
 # INPUT DATA
@@ -54,11 +54,11 @@ tanggal = st.date_input("Tanggal Bayar", datetime.date.today())
 status = st.selectbox("Status", ["Tepat Waktu", "Telat"])
 
 if st.button("Simpan"):
-    if nama != "":
-        if ONLINE:
-            query = "INSERT INTO kas (nama, tanggal, status) VALUES (?, ?, ?)"
-        else:
+    if nama.strip() != "":
+        if DB_MODE == "MYSQL":
             query = "INSERT INTO kas (nama, tanggal, status) VALUES (%s, %s, %s)"
+        else:
+            query = "INSERT INTO kas (nama, tanggal, status) VALUES (?, ?, ?)"
 
         data = (nama, str(tanggal), status)
 
