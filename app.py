@@ -1,78 +1,67 @@
-import streamlit as st 
+import streamlit as st
 import pandas as pd
 import datetime
+import os
+import sqlite3
 
 from sklearn.preprocessing import LabelEncoder
 from sklearn.tree import DecisionTreeClassifier
 
 # ======================
-# KONEKSI DATABASE (AUTO SWITCH)
+# DATABASE (SQLite - Aman untuk Streamlit Cloud)
 # ======================
-try:
-    import mysql.connector
+DB_PATH = "kas.db"
 
-    conn = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="091206",  # ganti jika perlu
-        database="kas_siswa"
-    )
-    cursor = conn.cursor()
-    DB_MODE = "MYSQL"
+conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+cursor = conn.cursor()
 
-except:
-    import sqlite3
-
-    conn = sqlite3.connect("kas.db", check_same_thread=False)
-    cursor = conn.cursor()
-
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS kas (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nama TEXT,
-        tanggal TEXT,
-        status TEXT
-    )
-    ''')
-    conn.commit()
-
-    DB_MODE = "SQLITE"
+# Buat tabel jika belum ada
+cursor.execute('''
+CREATE TABLE IF NOT EXISTS kas (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nama TEXT,
+    tanggal TEXT,
+    status TEXT
+)
+''')
+conn.commit()
 
 # ======================
-# UI TITLE
+# UI
 # ======================
 st.title("📊 Aplikasi Uang Kas Siswa + AI")
-st.caption(f"Mode Database: {DB_MODE}")
+st.caption("Mode Database: SQLite")
 
 # ======================
-# INPUT DATA
+# INPUT DATA (PAKAI FORM)
 # ======================
 st.subheader("➕ Input Pembayaran")
 
-nama = st.text_input("Nama Siswa")
-tanggal = st.date_input("Tanggal Bayar", datetime.date.today())
-status = st.selectbox("Status", ["Tepat Waktu", "Telat"])
+with st.form("form_input"):
+    nama = st.text_input("Nama Siswa")
+    tanggal = st.date_input("Tanggal Bayar", datetime.date.today())
+    status = st.selectbox("Status", ["Tepat Waktu", "Telat"])
 
-if st.button("Simpan"):
-    if nama.strip() != "":
-        if DB_MODE == "MYSQL":
-            query = "INSERT INTO kas (nama, tanggal, status) VALUES (%s, %s, %s)"
+    submit = st.form_submit_button("Simpan")
+
+    if submit:
+        if nama.strip() != "":
+            cursor.execute(
+                "INSERT INTO kas (nama, tanggal, status) VALUES (?, ?, ?)",
+                (nama, str(tanggal), status)
+            )
+            conn.commit()
+            st.success("Data berhasil disimpan!")
         else:
-            query = "INSERT INTO kas (nama, tanggal, status) VALUES (?, ?, ?)"
-
-        data = (nama, str(tanggal), status)
-
-        cursor.execute(query, data)
-        conn.commit()
-
-        st.success("Data berhasil disimpan!")
-    else:
-        st.warning("Nama tidak boleh kosong!")
+            st.warning("Nama tidak boleh kosong!")
 
 # ======================
 # AMBIL DATA
 # ======================
-df = pd.read_sql("SELECT * FROM kas", conn)
+try:
+    df = pd.read_sql("SELECT * FROM kas", conn)
+except:
+    df = pd.DataFrame(columns=["id", "nama", "tanggal", "status"])
 
 # ======================
 # TAMPILKAN DATA
@@ -81,7 +70,18 @@ st.subheader("📋 Data Pembayaran")
 st.dataframe(df)
 
 # ======================
-# DATA SCIENCE
+# DOWNLOAD DATABASE
+# ======================
+with open(DB_PATH, "rb") as f:
+    st.download_button(
+        label="⬇️ Download Database",
+        data=f,
+        file_name="kas.db",
+        mime="application/octet-stream"
+    )
+
+# ======================
+# ANALISIS DATA
 # ======================
 st.subheader("📈 Analisis Data")
 
@@ -98,6 +98,7 @@ if not df.empty:
         "Status": ["Tepat Waktu", "Telat"],
         "Jumlah": [tepat, telat]
     })
+
     st.bar_chart(chart_data.set_index("Status"))
 
 # ======================
@@ -123,13 +124,15 @@ if len(df) > 5:
 
         if st.button("Prediksi"):
             nama_encoded = le_nama.transform([nama_pred])
-            hasil = model.predict([nama_encoded])
+
+            hasil = model.predict(nama_encoded.reshape(1, -1))
             hasil_label = le_status.inverse_transform(hasil)
 
             st.success(f"Prediksi: {hasil_label[0]}")
 
     except Exception as e:
         st.error(f"Error AI: {e}")
+
 else:
     st.warning("Data minimal 6 untuk menjalankan AI")
 
