@@ -1,67 +1,169 @@
-import streamlit as st
+import streamlit as st 
 import pandas as pd
 import datetime
-import os
-import sqlite3
 
 from sklearn.preprocessing import LabelEncoder
 from sklearn.tree import DecisionTreeClassifier
 
-# ======================
-# DATABASE (SQLite - Aman untuk Streamlit Cloud)
-# ======================
-DB_PATH = "kas.db"
+st.markdown("""
+<style>
 
-conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-cursor = conn.cursor()
+/* ======================
+   BACKGROUND UTAMA
+====================== */
+[data-testid="stAppViewContainer"] {
+    background-color: #01023B;
+    color: white;
+}
 
-# Buat tabel jika belum ada
-cursor.execute('''
-CREATE TABLE IF NOT EXISTS kas (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    nama TEXT,
-    tanggal TEXT,
-    status TEXT
-)
-''')
-conn.commit()
+/* ======================
+   TEXT & LABEL (BONUS)
+====================== */
+label, .stMarkdown, .stText, p {
+    color: white !important;
+}
+
+/* ======================
+   TOMBOL
+====================== */
+.stButton > button {
+    background-color: #09F289;
+    color: black;
+    font-weight: bold;
+    border-radius: 10px;
+    border: none;
+    padding: 10px 20px;
+    transition: 0.3s;
+}
+
+.stButton > button:hover {
+    background-color: #07c96f;
+    color: white;
+    transform: scale(1.05);
+}
+
+/* ======================
+   INPUT TEXT & TEXTAREA
+====================== */
+input, textarea {
+    background-color: #02044F !important;
+    color: white !important;
+    border-radius: 8px !important;
+    border: 1px solid #09F289 !important;
+}
+
+/* ======================
+   SELECTBOX
+====================== */
+[data-baseweb="select"] {
+    background-color: #02044F !important;
+    color: white !important;
+    border-radius: 8px !important;
+}
+
+/* ======================
+   DATE INPUT
+====================== */
+[data-testid="stDateInput"] input {
+    background-color: #02044F !important;
+    color: white !important;
+}
+
+/* ======================
+   TABLE / DATAFRAME
+====================== */
+[data-testid="stDataFrame"] {
+    background-color: #02044F;
+    border-radius: 10px;
+}
+
+/* ======================
+   LOGO POJOK KANAN ATAS
+====================== */
+.logo-container {
+    position: fixed;
+    top: 20px;
+    right: 30px;
+    z-index: 999;
+}
+
+/* Optional: shadow biar elegan */
+.logo-container img {
+    border-radius: 50%;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+}
+
+</style>
+""", unsafe_allow_html=True)
 
 # ======================
-# UI
+# KONEKSI DATABASE (AUTO SWITCH)
+# ======================
+try:
+    import mysql.connector
+
+    conn = mysql.connector.connect(
+        host="localhost",
+        user="root",
+        password="091206",
+        database="kas_siswa"
+    )
+    cursor = conn.cursor()
+    DB_MODE = "MYSQL"
+
+except:
+    import sqlite3
+
+    conn = sqlite3.connect("kas.db", check_same_thread=False)
+    cursor = conn.cursor()
+
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS kas (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nama TEXT,
+        tanggal TEXT,
+        status TEXT
+    )
+    ''')
+    conn.commit()
+
+    DB_MODE = "SQLITE"
+
+# ======================
+# UI TITLE
 # ======================
 st.title("📊 Aplikasi Uang Kas Siswa + AI")
-st.caption("Mode Database: SQLite")
+st.caption(f"Mode Database: {DB_MODE}")
 
 # ======================
-# INPUT DATA (PAKAI FORM)
+# INPUT DATA
 # ======================
 st.subheader("➕ Input Pembayaran")
 
-with st.form("form_input"):
-    nama = st.text_input("Nama Siswa")
-    tanggal = st.date_input("Tanggal Bayar", datetime.date.today())
-    status = st.selectbox("Status", ["Tepat Waktu", "Telat"])
+nama = st.text_input("Nama Siswa")
+tanggal = st.date_input("Tanggal Bayar", datetime.date.today())
+status = st.selectbox("Status", ["Tepat Waktu", "Telat"])
 
-    submit = st.form_submit_button("Simpan")
-
-    if submit:
-        if nama.strip() != "":
-            cursor.execute(
-                "INSERT INTO kas (nama, tanggal, status) VALUES (?, ?, ?)",
-                (nama, str(tanggal), status)
-            )
-            conn.commit()
-            st.success("Data berhasil disimpan!")
+if st.button("Simpan"):
+    if nama.strip() != "":
+        if DB_MODE == "MYSQL":
+            query = "INSERT INTO kas (nama, tanggal, status) VALUES (%s, %s, %s)"
         else:
-            st.warning("Nama tidak boleh kosong!")
+            query = "INSERT INTO kas (nama, tanggal, status) VALUES (?, ?, ?)"
+
+        data = (nama, str(tanggal), status)
+
+        cursor.execute(query, data)
+        conn.commit()
+
+        st.success("Data berhasil disimpan!")
+    else:
+        st.warning("Nama tidak boleh kosong!")
 
 # ======================
 # AMBIL DATA
 # ======================
-try:
-    df = pd.read_sql("SELECT * FROM kas", conn)
-except:
-    df = pd.DataFrame(columns=["id", "nama", "tanggal", "status"])
+df = pd.read_sql("SELECT * FROM kas", conn)
 
 # ======================
 # TAMPILKAN DATA
@@ -70,18 +172,7 @@ st.subheader("📋 Data Pembayaran")
 st.dataframe(df)
 
 # ======================
-# DOWNLOAD DATABASE
-# ======================
-with open(DB_PATH, "rb") as f:
-    st.download_button(
-        label="⬇️ Download Database",
-        data=f,
-        file_name="kas.db",
-        mime="application/octet-stream"
-    )
-
-# ======================
-# ANALISIS DATA
+# DATA SCIENCE
 # ======================
 st.subheader("📈 Analisis Data")
 
@@ -98,7 +189,6 @@ if not df.empty:
         "Status": ["Tepat Waktu", "Telat"],
         "Jumlah": [tepat, telat]
     })
-
     st.bar_chart(chart_data.set_index("Status"))
 
 # ======================
@@ -124,15 +214,13 @@ if len(df) > 5:
 
         if st.button("Prediksi"):
             nama_encoded = le_nama.transform([nama_pred])
-
-            hasil = model.predict(nama_encoded.reshape(1, -1))
+            hasil = model.predict([nama_encoded])
             hasil_label = le_status.inverse_transform(hasil)
 
             st.success(f"Prediksi: {hasil_label[0]}")
 
     except Exception as e:
         st.error(f"Error AI: {e}")
-
 else:
     st.warning("Data minimal 6 untuk menjalankan AI")
 
