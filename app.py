@@ -5,95 +5,54 @@ import datetime
 from sklearn.preprocessing import LabelEncoder
 from sklearn.tree import DecisionTreeClassifier
 
+# ======================
+# CUSTOM CSS (BACKGROUND + BUTTON + LOGO)
+# ======================
 st.markdown("""
-<style>
+    <style>
+    .stApp {
+        background-color: #01023B;
+        color: white;
+    }
 
-/* ======================
-   BACKGROUND UTAMA
-====================== */
-[data-testid="stAppViewContainer"] {
-    background-color: #01023B;
-    color: white;
-}
+    /* Tombol Simpan */
+    div.stButton > button {
+        background-color: #09F289;
+        color: black;
+        font-weight: bold;
+        border-radius: 8px;
+        border: none;
+        padding: 10px 20px;
+    }
 
-/* ======================
-   TEXT & LABEL (BONUS)
-====================== */
-label, .stMarkdown, .stText, p {
-    color: white !important;
-}
+    div.stButton > button:hover {
+        background-color: #07c96f;
+        color: white;
+    }
 
-/* ======================
-   TOMBOL
-====================== */
-.stButton > button {
-    background-color: #09F289;
-    color: black;
-    font-weight: bold;
-    border-radius: 10px;
-    border: none;
-    padding: 10px 20px;
-    transition: 0.3s;
-}
+    /* Input field */
+    .stTextInput, .stDateInput, .stSelectbox {
+        background-color: #02044F;
+        border-radius: 8px;
+    }
 
-.stButton > button:hover {
-    background-color: #07c96f;
-    color: white;
-    transform: scale(1.05);
-}
+    /* Logo kanan atas */
+    .logo-container {
+        position: fixed;
+        top: 20px;
+        right: 30px;
+        z-index: 100;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
-/* ======================
-   INPUT TEXT & TEXTAREA
-====================== */
-input, textarea {
-    background-color: #02044F !important;
-    color: white !important;
-    border-radius: 8px !important;
-    border: 1px solid #09F289 !important;
-}
-
-/* ======================
-   SELECTBOX
-====================== */
-[data-baseweb="select"] {
-    background-color: #02044F !important;
-    color: white !important;
-    border-radius: 8px !important;
-}
-
-/* ======================
-   DATE INPUT
-====================== */
-[data-testid="stDateInput"] input {
-    background-color: #02044F !important;
-    color: white !important;
-}
-
-/* ======================
-   TABLE / DATAFRAME
-====================== */
-[data-testid="stDataFrame"] {
-    background-color: #02044F;
-    border-radius: 10px;
-}
-
-/* ======================
-   LOGO POJOK KANAN ATAS
-====================== */
-.logo-container {
-    position: fixed;
-    top: 20px;
-    right: 30px;
-    z-index: 999;
-}
-
-/* Optional: shadow biar elegan */
-.logo-container img {
-    border-radius: 50%;
-    box-shadow: 0 0 10px rgba(0,0,0,0.5);
-}
-
-</style>
+# ======================
+# LOGO (GANTI LINK SESUAI LOGO KAMU)
+# ======================
+st.markdown("""
+<div class="logo-container">
+    <img src="logo.png" width="60">
+</div>
 """, unsafe_allow_html=True)
 
 # ======================
