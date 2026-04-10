@@ -62,26 +62,11 @@ input, textarea {
     color: white !important;
 }
 
-/* LOGO TENGAH ATAS */
-.logo-container {
-    position: fixed;
-    top: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 999;
-}
-
-.logo-container img {
-    width: 120px; /* diperbesar */
-    border-radius: 12px;
-    box-shadow: 0 0 15px rgba(0,0,0,0.5);
-}
-
 </style>
 """, unsafe_allow_html=True)
 
 # ======================
-# LOGO (BASE64)
+# LOGO (FIX PAKAI BASE64)
 # ======================
 def get_base64(file):
     with open(file, "rb") as f:
@@ -91,14 +76,10 @@ try:
     img = get_base64("logo.png")
 
     st.markdown(f"""
-    <div class="logo-container">
-        <img src="data:image/png;base64,{img}">
+    <div style="position:fixed; top:20px; right:30px; z-index:999;">
+        <img src="data:image/png;base64,{img}" width="60">
     </div>
     """, unsafe_allow_html=True)
-
-    # spacer biar konten tidak ketiban logo
-    st.markdown("<br><br><br>", unsafe_allow_html=True)
-
 except:
     st.warning("Logo tidak ditemukan!")
 
@@ -136,10 +117,17 @@ except:
     DB_MODE = "SQLITE"
 
 # ======================
-# HEADER
+# HEADER + LOGO (ALT CARA GRID)
 # ======================
-st.title("📊 Aplikasi Uang Kas Siswa + AI")
-st.caption(f"Mode Database: {DB_MODE}")
+col1, col2 = st.columns([8,1])
+with col1:
+    st.title("📊 Aplikasi Uang Kas Siswa + AI")
+    st.caption(f"Mode Database: {DB_MODE}")
+with col2:
+    try:
+        st.image("logo.png", width=60)
+    except:
+        pass
 
 # ======================
 # INPUT DATA
