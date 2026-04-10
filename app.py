@@ -1,62 +1,90 @@
 import streamlit as st 
 import pandas as pd
 import datetime
+import base64
 
 from sklearn.preprocessing import LabelEncoder
 from sklearn.tree import DecisionTreeClassifier
 
 # ======================
-# CUSTOM CSS (BACKGROUND + BUTTON + LOGO)
+# CONFIG PAGE
+# ======================
+st.set_page_config(layout="wide")
+
+# ======================
+# CUSTOM CSS
 # ======================
 st.markdown("""
-    <style>
-    .stApp {
-        background-color: #01023B;
-        color: white;
-    }
+<style>
 
-    /* Tombol Simpan */
-    div.stButton > button {
-        background-color: #09F289;
-        color: black;
-        font-weight: bold;
-        border-radius: 8px;
-        border: none;
-        padding: 10px 20px;
-    }
+/* BACKGROUND */
+[data-testid="stAppViewContainer"] {
+    background-color: #01023B;
+    color: white;
+}
 
-    div.stButton > button:hover {
-        background-color: #07c96f;
-        color: white;
-    }
+/* TEXT */
+label, .stMarkdown, .stText, p {
+    color: white !important;
+}
 
-    /* Input field */
-    .stTextInput, .stDateInput, .stSelectbox {
-        background-color: #02044F;
-        border-radius: 8px;
-    }
+/* BUTTON */
+.stButton > button {
+    background-color: #09F289;
+    color: black;
+    font-weight: bold;
+    border-radius: 10px;
+    border: none;
+    padding: 10px 20px;
+}
 
-    /* Logo kanan atas */
-    .logo-container {
-        position: fixed;
-        top: 20px;
-        right: 30px;
-        z-index: 100;
-    }
-    </style>
+.stButton > button:hover {
+    background-color: #07c96f;
+    color: white;
+}
+
+/* INPUT */
+input, textarea {
+    background-color: #02044F !important;
+    color: white !important;
+    border-radius: 8px !important;
+}
+
+/* SELECTBOX */
+[data-baseweb="select"] {
+    background-color: #02044F !important;
+    color: white !important;
+}
+
+/* DATE */
+[data-testid="stDateInput"] input {
+    background-color: #02044F !important;
+    color: white !important;
+}
+
+</style>
 """, unsafe_allow_html=True)
 
 # ======================
-# LOGO (GANTI LINK SESUAI LOGO KAMU)
+# LOGO (FIX PAKAI BASE64)
 # ======================
-st.markdown("""
-<div class="logo-container">
-    <img src="logo.png" width="60">
-</div>
-""", unsafe_allow_html=True)
+def get_base64(file):
+    with open(file, "rb") as f:
+        return base64.b64encode(f.read()).decode()
+
+try:
+    img = get_base64("logo.png")
+
+    st.markdown(f"""
+    <div style="position:fixed; top:20px; right:30px; z-index:999;">
+        <img src="data:image/png;base64,{img}" width="60">
+    </div>
+    """, unsafe_allow_html=True)
+except:
+    st.warning("Logo tidak ditemukan!")
 
 # ======================
-# KONEKSI DATABASE (AUTO SWITCH)
+# DATABASE (AUTO SWITCH)
 # ======================
 try:
     import mysql.connector
@@ -89,10 +117,17 @@ except:
     DB_MODE = "SQLITE"
 
 # ======================
-# UI TITLE
+# HEADER + LOGO (ALT CARA GRID)
 # ======================
-st.title("📊 Aplikasi Uang Kas Siswa + AI")
-st.caption(f"Mode Database: {DB_MODE}")
+col1, col2 = st.columns([8,1])
+with col1:
+    st.title("📊 Aplikasi Uang Kas Siswa + AI")
+    st.caption(f"Mode Database: {DB_MODE}")
+with col2:
+    try:
+        st.image("logo.png", width=60)
+    except:
+        pass
 
 # ======================
 # INPUT DATA
@@ -128,10 +163,10 @@ df = pd.read_sql("SELECT * FROM kas", conn)
 # TAMPILKAN DATA
 # ======================
 st.subheader("📋 Data Pembayaran")
-st.dataframe(df)
+st.dataframe(df, use_container_width=True)
 
 # ======================
-# DATA SCIENCE
+# ANALISIS DATA
 # ======================
 st.subheader("📈 Analisis Data")
 
@@ -148,6 +183,7 @@ if not df.empty:
         "Status": ["Tepat Waktu", "Telat"],
         "Jumlah": [tepat, telat]
     })
+
     st.bar_chart(chart_data.set_index("Status"))
 
 # ======================
