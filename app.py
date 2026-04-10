@@ -76,7 +76,7 @@ try:
     img = get_base64("logo.png")
 
     st.markdown(f"""
-    <div style="position:fixed; top:20px; right:30px; z-index:999;">
+    <div style="position:center; top:60px; right:30px; z-index:999;">
         <img src="data:image/png;base64,{img}" width="60">
     </div>
     """, unsafe_allow_html=True)
