@@ -82,7 +82,13 @@ if "role" not in st.session_state:
     st.session_state.role = None
 if "menu" not in st.session_state:
     st.session_state.menu = "dashboard"
+# ======================
+# LOGO
+# ======================
+col_logo1, col_logo2, col_logo3 = st.columns([1,2,1])
 
+with col_logo2:
+    st.image("logo.png", use_container_width=True)
 # ================= ROLE =================
 if not st.session_state.login:
 
