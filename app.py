@@ -148,6 +148,9 @@ if not st.session_state.login and st.session_state.page == "role":
         if st.button("Developer"):
             st.session_state.role = "dev"
             st.session_state.page = "login"
+        elif st.session_state.role == "dev":
+    st.dataframe(pd.read_sql("SELECT * FROM kas", conn))
+    st.dataframe(pd.read_sql("SELECT * FROM admin", conn))
 # ======================
 # LOGIN
 # ======================
