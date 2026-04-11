@@ -128,7 +128,7 @@ with col_logo2:
 # ======================
 if not st.session_state.login and st.session_state.page == "role":
 
-    st.title("KAS KITA")
+    st.title("SELAMAT DATANG DI KAS KITA")
     st.subheader("Pilih Login")
 
     col1, col2, col3 = st.columns(3)
