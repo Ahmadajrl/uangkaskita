@@ -30,7 +30,6 @@ def clean_nominal(n):
 def generate_pdf(df):
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer)
-
     data = [df.columns.tolist()] + df.values.tolist()
 
     table = Table(data)
@@ -120,7 +119,6 @@ with col2:
 if not st.session_state.login and st.session_state.page == "role":
 
     st.title("SELAMAT DATANG DI KAS KITA")
-    st.subheader("Pilih Login")
 
     col1, col2, col3 = st.columns(3)
 
@@ -228,7 +226,6 @@ else:
             if st.button("Hapus Akun"):
                 cursor.execute("DELETE FROM admin WHERE id=?", (id_del,))
                 conn.commit()
-                st.success("Akun dihapus")
                 st.rerun()
 
         st.subheader("📊 Semua Data Kas")
@@ -285,17 +282,38 @@ else:
             )
 
             if not df.empty:
+
                 st.subheader("📈 Statistik")
-
                 st.metric("Total Kas", format_rupiah(df["nominal"].sum()))
-
                 st.bar_chart(df["status"].value_counts())
 
-                # ================= TABEL DATA KAS (RESTORED) =================
+                # ================= TABEL =================
                 st.subheader("📋 Data Kas")
                 df_tampil = df.copy()
                 df_tampil["tanggal"] = pd.to_datetime(df_tampil["tanggal"]).dt.strftime("%Y-%m-%d")
                 st.dataframe(df_tampil)
+
+                # ================= CEK STATISTIK SISWA (RESTORED) =================
+                st.subheader("📊 Cek Performa Siswa")
+
+                siswa = st.selectbox("Pilih Siswa", sorted(df["nama"].unique()))
+
+                if st.button("Cek Performa"):
+                    data = df[df["nama"] == siswa]
+                    hasil = data["status"].value_counts()
+
+                    st.bar_chart(hasil)
+
+                    total = len(data)
+                    telat = len(data[data["status"] == "Telat"])
+                    persen = (telat / total) * 100 if total > 0 else 0
+
+                    if persen < 20:
+                        st.success("Performa sangat baik 👍")
+                    elif persen < 50:
+                        st.warning("Perlu peningkatan ⚠️")
+                    else:
+                        st.error("Sering telat ❌")
 
             # ================= HAPUS =================
             st.subheader("🗑️ Hapus Data")
