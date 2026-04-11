@@ -184,7 +184,7 @@ elif not st.session_state.login:
                     st.session_state.kelas = kelas
                     st.session_state.jurusan = jurusan.upper()
                     st.rerun()
-    elif st.session_state.role == "dev":
+elif st.session_state.role == "dev":
 
     st.subheader("Login Developer")
 
