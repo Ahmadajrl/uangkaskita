@@ -160,6 +160,20 @@ elif not st.session_state.login:
     st.title("Login")
 
     if st.session_state.role == "admin":
+    elif st.session_state.role == "dev":
+
+    st.subheader("Login Developer")
+
+    username = st.text_input("Username Developer")
+    password = st.text_input("Password Developer", type="password")
+
+    if st.button("Login Developer"):
+        if username == DEV_USER and password == DEV_PASS:
+            st.session_state.login = True
+            st.success("Login Developer Berhasil")
+            st.rerun()
+        else:
+            st.error("Username atau Password Developer salah")
 
         menu = st.radio("Menu", ["Login", "Register", "Lupa Password"])
 
