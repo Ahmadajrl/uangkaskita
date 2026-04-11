@@ -1,7 +1,8 @@
-import streamlit as st 
+import streamlit as st
 import pandas as pd
 import datetime
 import base64
+import matplotlib.pyplot as plt
 
 # ======================
 # CONFIG PAGE
@@ -13,57 +14,36 @@ st.set_page_config(layout="wide")
 # ======================
 st.markdown("""
 <style>
-
-/* BACKGROUND */
 [data-testid="stAppViewContainer"] {
     background-color: #01023B;
     color: white;
 }
-
-/* TEXT */
 label, .stMarkdown, .stText, p {
     color: white !important;
 }
-
-/* BUTTON */
 .stButton > button {
     background-color: #09F289;
     color: black;
     font-weight: bold;
     border-radius: 10px;
-    border: none;
-    padding: 10px 20px;
 }
-
 .stButton > button:hover {
     background-color: #07c96f;
     color: white;
 }
-
-/* INPUT */
 input, textarea {
     background-color: #02044F !important;
     color: white !important;
-    border-radius: 8px !important;
 }
-
-/* SELECTBOX */
 [data-baseweb="select"] {
     background-color: #02044F !important;
     color: white !important;
 }
-
-/* DATE */
-[data-testid="stDateInput"] input {
-    background-color: #02044F !important;
-    color: white !important;
-}
-
 </style>
 """, unsafe_allow_html=True)
 
 # ======================
-# LOGO BASE64 (TENGAH ATAS)
+# LOGO
 # ======================
 def get_base64(file):
     with open(file, "rb") as f:
@@ -71,9 +51,8 @@ def get_base64(file):
 
 try:
     img = get_base64("logo.png")
-
     st.markdown(f"""
-    <div style="text-align:center; margin-top:10px;">
+    <div style="text-align:center;">
         <img src="data:image/png;base64,{img}" width="120">
     </div>
     """, unsafe_allow_html=True)
@@ -81,37 +60,34 @@ except:
     st.warning("Logo tidak ditemukan!")
 
 # ======================
-# DATABASE (AUTO SWITCH)
+# DATABASE
 # ======================
 try:
     import mysql.connector
-
     conn = mysql.connector.connect(
         host="localhost",
         user="root",
         password="091206",
         database="kas_siswa"
     )
-    cursor = conn.cursor()
     DB_MODE = "MYSQL"
-
 except:
     import sqlite3
-
     conn = sqlite3.connect("kas.db", check_same_thread=False)
-    cursor = conn.cursor()
-
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS kas (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nama TEXT,
-        tanggal TEXT,
-        status TEXT
-    )
-    ''')
-    conn.commit()
-
     DB_MODE = "SQLITE"
+
+cursor = conn.cursor()
+
+# buat tabel jika belum ada
+cursor.execute('''
+CREATE TABLE IF NOT EXISTS kas (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nama TEXT,
+    tanggal TEXT,
+    status TEXT
+)
+''')
+conn.commit()
 
 # ======================
 # HEADER
@@ -135,9 +111,7 @@ if st.button("Simpan"):
         else:
             query = "INSERT INTO kas (nama, tanggal, status) VALUES (?, ?, ?)"
 
-        data = (nama, str(tanggal), status)
-
-        cursor.execute(query, data)
+        cursor.execute(query, (nama, str(tanggal), status))
         conn.commit()
 
         st.success("Data berhasil disimpan!")
@@ -175,9 +149,11 @@ if not df.empty:
     })
 
     st.bar_chart(chart_data.set_index("Status"))
+else:
+    st.warning("Belum ada data")
 
 # ======================
-# STATISTIK PER SISWA (PIE CHART)
+# PIE CHART PER SISWA
 # ======================
 st.subheader("📊 Statistik Keterlambatan Siswa")
 
@@ -199,13 +175,17 @@ if not df.empty:
 
             st.write(f"Statistik untuk: **{nama_pilih}**")
 
-            st.pyplot(
-                pie_data.set_index("Status").plot.pie(
-                    y="Jumlah",
-                    autopct='%1.1f%%',
-                    figsize=(5,5)
-                ).get_figure()
+            # PIE CHART FIX
+            fig, ax = plt.subplots()
+            ax.pie(
+                pie_data["Jumlah"],
+                labels=pie_data["Status"],
+                autopct='%1.1f%%',
+                startangle=90
             )
+            ax.set_title("Persentase Pembayaran")
+
+            st.pyplot(fig)
         else:
             st.warning("Belum ada data untuk siswa ini")
 else:
