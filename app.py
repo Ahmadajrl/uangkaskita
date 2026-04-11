@@ -5,7 +5,6 @@ import sqlite3
 import random
 import hashlib
 
-# PDF
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 from reportlab.lib import colors
 import io
@@ -28,7 +27,7 @@ def clean_nominal(n):
     return int(n) if n.isdigit() else 0
 
 # ======================
-# PDF GENERATOR
+# PDF
 # ======================
 def generate_pdf(df, title="Data"):
     buffer = io.BytesIO()
@@ -54,7 +53,7 @@ def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
 # ======================
-# DB INIT
+# DB
 # ======================
 def init_db():
     conn = sqlite3.connect("kas.db", check_same_thread=False)
@@ -117,6 +116,13 @@ for k, v in defaults.items():
         st.session_state[k] = v
 
 # ======================
+# LOGO (TETAP)
+# ======================
+col1, col2, col3 = st.columns([1,2,1])
+with col2:
+    st.image("logo.png", use_container_width=True)
+
+# ======================
 # ROLE PAGE
 # ======================
 if not st.session_state.login and st.session_state.page == "role":
@@ -143,7 +149,7 @@ if not st.session_state.login and st.session_state.page == "role":
             st.session_state.page = "login"
 
 # ======================
-# LOGIN ADMIN + DEV
+# LOGIN
 # ======================
 elif not st.session_state.login:
 
@@ -153,7 +159,7 @@ elif not st.session_state.login:
 
     st.title("Login")
 
-    # ================= ADMIN =================
+    # ================= ADMIN LOGIN =================
     if st.session_state.role == "admin":
 
         username = st.text_input("Username")
@@ -177,7 +183,7 @@ elif not st.session_state.login:
                 st.session_state.jurusan = jurusan.upper()
                 st.rerun()
 
-    # ================= DEVELOPER LOGIN =================
+    # ================= DEV LOGIN =================
     elif st.session_state.role == "dev":
 
         st.subheader("Login Developer")
@@ -192,7 +198,7 @@ elif not st.session_state.login:
                 st.success("Login Developer Berhasil")
                 st.rerun()
             else:
-                st.error("Username atau Password salah")
+                st.error("Login gagal")
 
 # ======================
 # MAIN APP
@@ -204,7 +210,7 @@ else:
     # ================= USER =================
     if st.session_state.role == "user":
 
-        st.subheader("👤 User Dashboard")
+        st.subheader("👤 USER DASHBOARD")
 
         df = pd.read_sql("SELECT * FROM kas", conn)
 
@@ -213,7 +219,6 @@ else:
             df["bulan"] = df["tanggal"].dt.strftime("%B %Y")
             df["tanggal"] = df["tanggal"].dt.strftime("%Y-%m-%d")
 
-            # FILTER
             col1, col2, col3 = st.columns(3)
 
             with col1:
@@ -241,21 +246,20 @@ else:
     # ================= DEVELOPER =================
     elif st.session_state.role == "dev":
 
-        st.subheader("🛠️ Developer Dashboard")
+        st.subheader("🛠️ DEVELOPER DASHBOARD")
 
-        df_kas = pd.read_sql("SELECT * FROM kas", conn)
         df_admin = pd.read_sql("SELECT * FROM admin", conn)
+        df_kas = pd.read_sql("SELECT * FROM kas", conn)
 
-        st.subheader("👤 Data Admin")
+        st.subheader("👤 Data Akun Admin")
         st.dataframe(df_admin)
 
-        st.subheader("🗑️ Hapus Akun Admin")
-
+        st.subheader("🗑️ Hapus Akun")
         if not df_admin.empty:
-            akun_id = st.number_input("ID Akun", step=1)
+            id_del = st.number_input("ID Akun", step=1)
 
             if st.button("Hapus Akun"):
-                cursor.execute("DELETE FROM admin WHERE id=?", (akun_id,))
+                cursor.execute("DELETE FROM admin WHERE id=?", (id_del,))
                 conn.commit()
                 st.success("Akun dihapus")
                 st.rerun()
@@ -267,14 +271,73 @@ else:
             st.session_state.clear()
             st.rerun()
 
-    # ================= ADMIN =================
+    # ================= ADMIN (FULL RESTORE) =================
     elif st.session_state.role == "admin":
 
         st.success(f"Kelas {st.session_state.kelas} - {st.session_state.jurusan}")
 
-        st.subheader("ADMIN MODE (tetap seperti sebelumnya)")
-        st.info("Bagian admin tetap sama seperti coding kamu sebelumnya")
+        colA, colB = st.columns(2)
 
+        with colA:
+            if st.button("📊 Dashboard"):
+                st.session_state.menu = "dashboard"
+                st.rerun()
+
+        with colB:
+            if st.button("💸 Pengeluaran"):
+                st.session_state.menu = "pengeluaran"
+                st.rerun()
+
+        # ================= INPUT KAS =================
+        if st.session_state.menu == "dashboard":
+
+            st.subheader("➕ Input Pembayaran")
+
+            nama = st.text_input("Nama")
+            tanggal = st.date_input("Tanggal")
+            status = st.selectbox("Status", ["Tepat Waktu", "Telat"])
+            keterangan = st.text_input("Keterangan")
+            nominal = st.text_input("Nominal")
+
+            if st.button("Simpan"):
+                nilai = clean_nominal(nominal)
+
+                cursor.execute(
+                    "INSERT INTO kas VALUES (NULL,?,?,?,?,?,?,?)",
+                    (nama, tanggal.strftime("%Y-%m-%d"), status,
+                     st.session_state.kelas,
+                     st.session_state.jurusan,
+                     keterangan,
+                     nilai)
+                )
+                conn.commit()
+                st.success("Tersimpan")
+                st.rerun()
+
+        # ================= PENGELUARAN =================
+        elif st.session_state.menu == "pengeluaran":
+
+            st.subheader("💸 Input Pengeluaran")
+
+            tgl = st.date_input("Tanggal")
+            ket = st.text_input("Keterangan")
+            nominal = st.text_input("Nominal")
+
+            if st.button("Simpan Pengeluaran"):
+                nilai = clean_nominal(nominal)
+
+                cursor.execute(
+                    "INSERT INTO pengeluaran VALUES (NULL,?,?,?,?,?)",
+                    (tgl.strftime("%Y-%m-%d"),
+                     st.session_state.kelas,
+                     st.session_state.jurusan,
+                     ket,
+                     nilai)
+                )
+                conn.commit()
+                st.success("Tersimpan")
+
+        # ================= LOGOUT =================
         if st.button("Logout"):
             st.session_state.clear()
             st.rerun()
