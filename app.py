@@ -25,7 +25,7 @@ def clean_nominal(n):
     return int(n) if n.isdigit() else 0
 
 # ======================
-# PDF GENERATOR
+# PDF
 # ======================
 def generate_pdf(df):
     buffer = io.BytesIO()
@@ -45,7 +45,7 @@ def generate_pdf(df):
     return buffer
 
 # ======================
-# DB INIT
+# DB
 # ======================
 def init_db():
     conn = sqlite3.connect("kas.db", check_same_thread=False)
@@ -115,7 +115,7 @@ with col2:
     st.image("logo.png", use_container_width=True)
 
 # ======================
-# ROLE PAGE
+# ROLE
 # ======================
 if not st.session_state.login and st.session_state.page == "role":
 
@@ -147,7 +147,6 @@ elif not st.session_state.login:
 
     st.title("Login")
 
-    # ADMIN LOGIN
     if st.session_state.role == "admin":
 
         user = st.text_input("Username")
@@ -161,7 +160,6 @@ elif not st.session_state.login:
             st.session_state.jurusan = jurusan.upper()
             st.rerun()
 
-    # DEV LOGIN
     elif st.session_state.role == "dev":
 
         user = st.text_input("Username Developer")
@@ -293,9 +291,14 @@ else:
 
                 st.bar_chart(df["status"].value_counts())
 
+                # ================= TABEL DATA KAS (RESTORED) =================
+                st.subheader("📋 Data Kas")
+                df_tampil = df.copy()
+                df_tampil["tanggal"] = pd.to_datetime(df_tampil["tanggal"]).dt.strftime("%Y-%m-%d")
+                st.dataframe(df_tampil)
+
             # ================= HAPUS =================
             st.subheader("🗑️ Hapus Data")
-
             konfirmasi = st.checkbox("Konfirmasi")
 
             col1, col2, col3 = st.columns(3)
@@ -322,7 +325,7 @@ else:
                     conn.commit()
                     st.rerun()
 
-        # ================= PENGELUARAN (FULL + SALDO + TABEL) =================
+        # ================= PENGELUARAN =================
         elif st.session_state.menu == "pengeluaran":
 
             st.subheader("💸 Input Pengeluaran")
@@ -371,5 +374,9 @@ else:
 
                 pdf = generate_pdf(df_keluar)
                 st.download_button("Download PDF", pdf, "pengeluaran.pdf")
+
+        if st.button("Logout"):
+            st.session_state.clear()
+            st.rerun()
 
 st.write("© kaskita 2026")
