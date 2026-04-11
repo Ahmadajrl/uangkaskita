@@ -20,7 +20,7 @@ def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
 # ======================
-# DB INIT (ANTI ERROR KOLOM)
+# DB INIT
 # ======================
 def init_db():
     conn = sqlite3.connect("kas.db", check_same_thread=False)
@@ -49,7 +49,6 @@ def init_db():
     )
     ''')
 
-    # ===== FIX KOLOM TAMBAHAN
     def ensure_column(table, column):
         cursor.execute(f"PRAGMA table_info({table})")
         cols = [c[1] for c in cursor.fetchall()]
@@ -187,7 +186,7 @@ else:
             else:
                 st.warning("Nama tidak boleh kosong")
 
-        # AMBIL DATA
+        # DATA
         df = pd.read_sql(
             "SELECT * FROM kas WHERE kelas=? AND jurusan=?",
             conn,
@@ -204,16 +203,14 @@ else:
 
         col1, col2, col3 = st.columns(3)
 
-        # hapus berdasarkan ID
         with col1:
             id_hapus = st.number_input("Hapus berdasarkan ID", step=1)
             if st.button("Hapus ID") and konfirmasi:
                 cursor.execute("DELETE FROM kas WHERE id=?", (id_hapus,))
                 conn.commit()
-                st.success("Data berhasil dihapus")
+                st.success("Data dihapus")
                 st.rerun()
 
-        # hapus per siswa
         with col2:
             if not df.empty:
                 siswa_hapus = st.selectbox("Hapus per siswa", df["nama"].unique())
@@ -228,7 +225,6 @@ else:
                     st.success("Data siswa dihapus")
                     st.rerun()
 
-        # hapus semua
         with col3:
             if st.button("Hapus Semua Data") and konfirmasi:
                 cursor.execute(
@@ -240,13 +236,46 @@ else:
                 st.success("Semua data dihapus")
                 st.rerun()
 
-        # ================= ANALISIS =================
-        st.subheader("📈 Analisis")
+        # ================= ANALISIS GLOBAL =================
+        st.subheader("📈 Analisis Keseluruhan")
 
         if not df.empty:
             st.bar_chart(df["status"].value_counts())
         else:
             st.info("Belum ada data")
+
+        # ================= CEK PERFORMA SISWA =================
+        st.subheader("🎯 Cek Performa Siswa")
+
+        if not df.empty:
+            siswa = st.selectbox("Pilih Siswa", df["nama"].unique())
+
+            if st.button("Cek Performa"):
+
+                data_siswa = df[df["nama"] == siswa]
+                hasil = data_siswa["status"].value_counts()
+
+                st.write(f"Performa: **{siswa}**")
+                st.bar_chart(hasil)
+
+                total = len(data_siswa)
+                telat = len(data_siswa[data_siswa["status"] == "Telat"])
+                persen = (telat / total) * 100 if total > 0 else 0
+
+                st.write(f"Total: {total}")
+                st.write(f"Telat: {telat}")
+                st.write(f"Persentase Telat: {persen:.2f}%")
+
+                # AI Insight
+                if persen < 20:
+                    st.success("Sangat disiplin 👍")
+                elif persen < 50:
+                    st.warning("Cukup baik, perlu ditingkatkan ⚠️")
+                else:
+                    st.error("Sering telat ❌")
+
+        else:
+            st.info("Belum ada data siswa")
 
     # ================= USER =================
     elif st.session_state.role == "user":
