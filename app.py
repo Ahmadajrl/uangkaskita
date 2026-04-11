@@ -11,13 +11,13 @@ import hashlib
 st.set_page_config(layout="wide")
 
 # ======================
-# DEVELOPER LOGIN (FIX)
+# DEVELOPER LOGIN
 # ======================
 DEV_USER = "developer"
 DEV_PASS = "kaskita"
 
 # ======================
-# HASH PASSWORD
+# HASH
 # ======================
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
@@ -59,9 +59,18 @@ conn, cursor = init_db()
 # ======================
 # SESSION
 # ======================
-for key in ["login","role","kelas","jurusan"]:
+defaults = {
+    "login": False,
+    "role": None,
+    "kelas": None,
+    "jurusan": None,
+    "otp": None,
+    "reset_mode": False
+}
+
+for key, val in defaults.items():
     if key not in st.session_state:
-        st.session_state[key] = None
+        st.session_state[key] = val
 
 # ======================
 # LOGIN PAGE
@@ -75,33 +84,58 @@ if not st.session_state.login:
     # ================= ADMIN =================
     if role == "Admin":
 
-        menu = st.radio("Menu", ["Login", "Register"])
+        menu = st.radio("Menu", ["Login", "Register", "Lupa Password"])
 
+        # ===== LOGIN =====
         if menu == "Login":
+
             username = st.text_input("Username")
             password = st.text_input("Password", type="password")
             kelas = st.selectbox("Kelas", ["10", "11", "12"])
             jurusan = st.text_input("Jurusan")
 
             if st.button("Login"):
-                cursor.execute(
-                    """SELECT * FROM admin 
-                    WHERE username=? AND password=? AND kelas=? AND jurusan=?""",
-                    (username.strip(),
-                     hash_password(password),
-                     kelas,
-                     jurusan.strip().upper())
-                )
-                if cursor.fetchone():
-                    st.session_state.login = True
-                    st.session_state.role = "admin"
-                    st.session_state.kelas = kelas
-                    st.session_state.jurusan = jurusan.upper()
-                    st.rerun()
-                else:
-                    st.error("Login gagal")
 
+                username = username.strip()
+                jurusan = jurusan.strip().upper()
+                hashed = hash_password(password)
+
+                # cek username dulu
+                cursor.execute("SELECT * FROM admin WHERE username=?", (username,))
+                user_data = cursor.fetchone()
+
+                if not user_data:
+                    st.error("Username tidak ditemukan")
+                    st.info("Silakan gunakan menu 'Lupa Password' jika lupa akun")
+
+                else:
+                    # cek password
+                    if user_data[2] != hashed:
+                        st.error("Password salah")
+                        st.session_state.reset_mode = True
+
+                    # cek kelas & jurusan
+                    elif user_data[4] != kelas or user_data[5] != jurusan:
+                        st.error("Kelas atau jurusan tidak sesuai")
+
+                    else:
+                        st.session_state.login = True
+                        st.session_state.role = "admin"
+                        st.session_state.kelas = kelas
+                        st.session_state.jurusan = jurusan
+                        st.success("Login berhasil")
+                        st.rerun()
+
+            # tampilkan tombol lupa password setelah gagal
+            if st.session_state.reset_mode:
+                st.warning("Lupa password?")
+                if st.button("Ke Menu Lupa Password"):
+                    st.session_state.reset_mode = False
+                    st.rerun()
+
+        # ===== REGISTER =====
         elif menu == "Register":
+
             user = st.text_input("Username")
             pw = st.text_input("Password", type="password")
             email = st.text_input("Email")
@@ -109,12 +143,14 @@ if not st.session_state.login:
             jurusan = st.text_input("Jurusan")
 
             if st.button("Daftar"):
+
                 cursor.execute(
                     "SELECT * FROM admin WHERE kelas=? AND jurusan=?",
                     (kelas, jurusan.upper())
                 )
+
                 if cursor.fetchone():
-                    st.error("Sudah ada admin di kelas ini")
+                    st.error("Admin kelas & jurusan sudah ada")
                 else:
                     cursor.execute(
                         """INSERT INTO admin 
@@ -127,7 +163,35 @@ if not st.session_state.login:
                          jurusan.upper())
                     )
                     conn.commit()
-                    st.success("Akun dibuat")
+                    st.success("Akun berhasil dibuat")
+
+        # ===== LUPA PASSWORD =====
+        elif menu == "Lupa Password":
+
+            email = st.text_input("Masukkan Email")
+
+            if st.button("Kirim OTP"):
+                cursor.execute("SELECT * FROM admin WHERE email=?", (email,))
+                if cursor.fetchone():
+                    otp = str(random.randint(1000, 9999))
+                    st.session_state.otp = otp
+                    st.success(f"OTP (simulasi): {otp}")
+                else:
+                    st.error("Email tidak ditemukan")
+
+            otp_input = st.text_input("Masukkan OTP")
+            new_pw = st.text_input("Password Baru", type="password")
+
+            if st.button("Reset Password"):
+                if otp_input == st.session_state.otp:
+                    cursor.execute(
+                        "UPDATE admin SET password=? WHERE email=?",
+                        (hash_password(new_pw), email)
+                    )
+                    conn.commit()
+                    st.success("Password berhasil diubah")
+                else:
+                    st.error("OTP salah")
 
     # ================= USER =================
     elif role == "User":
@@ -147,7 +211,7 @@ if not st.session_state.login:
                 st.session_state.role = "dev"
                 st.rerun()
             else:
-                st.error("Akses ditolak")
+                st.error("Username atau password developer salah")
 
 # ======================
 # MAIN APP
