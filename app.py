@@ -66,7 +66,7 @@ defaults = {
     "jurusan": None,
     "otp": None,
     "reset_mode": False,
-    "page": "role"   # ⬅️ halaman awal
+    "page": "role"
 }
 
 for k, v in defaults.items():
@@ -103,6 +103,12 @@ if not st.session_state.login and st.session_state.page == "role":
 # HALAMAN LOGIN
 # ======================
 elif not st.session_state.login and st.session_state.page == "login":
+
+    # 🔙 TOMBOL KEMBALI
+    if st.button("⬅️ Kembali"):
+        st.session_state.page = "role"
+        st.session_state.role = None
+        st.rerun()
 
     st.title("🔐 Login")
 
@@ -180,6 +186,11 @@ elif not st.session_state.login and st.session_state.page == "login":
 # ======================
 elif st.session_state.page == "reset":
 
+    # 🔙 TOMBOL KEMBALI
+    if st.button("⬅️ Kembali"):
+        st.session_state.page = "login"
+        st.rerun()
+
     st.title("🔁 Reset Password")
 
     email = st.text_input("Email")
@@ -215,7 +226,6 @@ elif st.session_state.login:
 
     st.title("📊 KAS KITA")
 
-    # ADMIN
     if st.session_state.role == "admin":
         st.success(f"Admin {st.session_state.kelas}-{st.session_state.jurusan}")
 
@@ -240,13 +250,11 @@ elif st.session_state.login:
         )
         st.dataframe(df)
 
-    # USER
     elif st.session_state.role == "user":
         st.info("User Mode")
         df = pd.read_sql("SELECT * FROM kas", conn)
         st.dataframe(df)
 
-    # DEVELOPER
     elif st.session_state.role == "dev":
         st.warning("Developer Mode")
 
@@ -259,7 +267,6 @@ elif st.session_state.login:
         )
         st.dataframe(admin_df)
 
-    # LOGOUT
     if st.button("Logout"):
         st.session_state.clear()
         st.rerun()
