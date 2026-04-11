@@ -192,7 +192,7 @@ else:
 
     st.title("📊 Dashboard KAS")
     # ================= USER =================
-if st.session_state.role == "user":
+    if st.session_state.role == "user":
 
     st.title("📊 Dashboard User")
 
