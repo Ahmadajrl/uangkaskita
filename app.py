@@ -94,8 +94,8 @@ if not st.session_state.login:
         if menu == "Login":
             username = st.text_input("Username")
             password = st.text_input("Password", type="password")
-            kelas = st.selectbox("Kelas", ["A", "B", "C"])
-            jurusan = st.text_input("Jurusan (contoh: RPL)")
+            kelas = st.selectbox("Kelas", ["10", "11", "12"])
+            jurusan = st.text_input("Jurusan (contoh: TKJ 1)")
 
             if st.button("Login"):
                 cursor.execute(
