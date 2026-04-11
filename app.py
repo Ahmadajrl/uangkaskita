@@ -73,7 +73,7 @@ for k, v in defaults.items():
 # ======================
 if not st.session_state.login and st.session_state.page == "role":
 
-    st.title("🚀 KAS KITA")
+    st.title("KAS KITA")
     st.subheader("Pilih Login")
 
     col1, col2, col3 = st.columns(3)
@@ -99,7 +99,7 @@ if not st.session_state.login and st.session_state.page == "role":
 # ======================
 elif not st.session_state.login:
 
-    if st.button("⬅️ Kembali"):
+    if st.button("Kembali"):
         st.session_state.page = "role"
         st.rerun()
 
@@ -144,7 +144,7 @@ elif not st.session_state.login:
 # ======================
 else:
 
-    st.title("📊 Dashboard KAS")
+    st.title("Dashboard KAS")
 
     # ================= ADMIN =================
     if st.session_state.role == "admin":
@@ -176,11 +176,11 @@ else:
             params=(st.session_state.kelas, st.session_state.jurusan)
         )
 
-        st.subheader("📋 Data Siswa")
+        st.subheader("Data Siswa")
         st.dataframe(df, use_container_width=True)
 
         # ================= AI ANALISIS =================
-        st.subheader("🤖 Analisis Otomatis")
+        st.subheader("Analisis Otomatis")
 
         if not df.empty:
             total = len(df)
@@ -207,7 +207,7 @@ else:
             st.info("Belum ada data")
 
         # ================= CEK PERFORMA SISWA =================
-        st.subheader("📊 Cek Performa Siswa")
+        st.subheader("Cek Performa Siswa")
 
         if not df.empty:
             siswa = st.selectbox("Pilih Siswa", df["nama"].unique())
