@@ -10,9 +10,6 @@ import hashlib
 # ======================
 st.set_page_config(layout="wide")
 
-# ======================
-# DEV LOGIN
-# ======================
 DEV_USER = "developer"
 DEV_PASS = "kaskita"
 
@@ -64,8 +61,6 @@ defaults = {
     "role": None,
     "kelas": None,
     "jurusan": None,
-    "otp": None,
-    "reset_mode": False,
     "page": "role"
 }
 
@@ -78,99 +73,62 @@ for k, v in defaults.items():
 # ======================
 if not st.session_state.login and st.session_state.page == "role":
 
-    st.title("🚀 Selamat Datang di KAS KITA")
-    st.subheader("Pilih Login Sebagai")
+    st.title("🚀 KAS KITA")
+    st.subheader("Pilih Login")
 
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        if st.button("👨‍💼 Admin"):
+        if st.button("Admin"):
             st.session_state.role = "admin"
             st.session_state.page = "login"
 
     with col2:
-        if st.button("👤 User"):
+        if st.button("User"):
             st.session_state.role = "user"
             st.session_state.login = True
             st.rerun()
 
     with col3:
-        if st.button("🧑‍💻 Developer"):
+        if st.button("Developer"):
             st.session_state.role = "dev"
             st.session_state.page = "login"
 
 # ======================
-# HALAMAN LOGIN
+# LOGIN
 # ======================
-elif not st.session_state.login and st.session_state.page == "login":
+elif not st.session_state.login:
 
-    # 🔙 TOMBOL KEMBALI
     if st.button("⬅️ Kembali"):
         st.session_state.page = "role"
-        st.session_state.role = None
         st.rerun()
 
-    st.title("🔐 Login")
+    st.title("Login")
 
-    # ================= ADMIN =================
     if st.session_state.role == "admin":
 
-        menu = st.radio("Menu", ["Login", "Register", "Lupa Password"])
+        username = st.text_input("Username")
+        password = st.text_input("Password", type="password")
+        kelas = st.selectbox("Kelas", ["10", "11", "12"])
+        jurusan = st.text_input("Jurusan")
 
-        # LOGIN
-        if menu == "Login":
-            username = st.text_input("Username")
-            password = st.text_input("Password", type="password")
-            kelas = st.selectbox("Kelas", ["10", "11", "12"])
-            jurusan = st.text_input("Jurusan")
+        if st.button("Login"):
+            cursor.execute("SELECT * FROM admin WHERE username=?", (username,))
+            data = cursor.fetchone()
 
-            if st.button("Login"):
-                cursor.execute("SELECT * FROM admin WHERE username=?", (username,))
-                data = cursor.fetchone()
+            if not data:
+                st.error("Username tidak ditemukan")
+            elif data[2] != hash_password(password):
+                st.error("Password salah")
+            elif data[4] != kelas or data[5] != jurusan.upper():
+                st.error("Kelas/Jurusan salah")
+            else:
+                st.session_state.login = True
+                st.session_state.kelas = kelas
+                st.session_state.jurusan = jurusan.upper()
+                st.rerun()
 
-                if not data:
-                    st.error("Username tidak ditemukan")
-                elif data[2] != hash_password(password):
-                    st.error("Password salah")
-                    st.session_state.reset_mode = True
-                elif data[4] != kelas or data[5] != jurusan.upper():
-                    st.error("Kelas/Jurusan salah")
-                else:
-                    st.session_state.login = True
-                    st.session_state.kelas = kelas
-                    st.session_state.jurusan = jurusan.upper()
-                    st.rerun()
-
-            if st.session_state.reset_mode:
-                if st.button("Lupa Password?"):
-                    st.session_state.page = "reset"
-
-        # REGISTER
-        elif menu == "Register":
-            user = st.text_input("Username")
-            pw = st.text_input("Password", type="password")
-            email = st.text_input("Email")
-            kelas = st.selectbox("Kelas", ["10", "11", "12"])
-            jurusan = st.text_input("Jurusan")
-
-            if st.button("Daftar"):
-                cursor.execute(
-                    "SELECT * FROM admin WHERE kelas=? AND jurusan=?",
-                    (kelas, jurusan.upper())
-                )
-                if cursor.fetchone():
-                    st.error("Admin sudah ada")
-                else:
-                    cursor.execute(
-                        "INSERT INTO admin VALUES (NULL,?,?,?,?,?)",
-                        (user, hash_password(pw), email, kelas, jurusan.upper())
-                    )
-                    conn.commit()
-                    st.success("Berhasil daftar")
-
-    # ================= DEVELOPER =================
     elif st.session_state.role == "dev":
-
         user = st.text_input("Username")
         pw = st.text_input("Password", type="password")
 
@@ -179,57 +137,24 @@ elif not st.session_state.login and st.session_state.page == "login":
                 st.session_state.login = True
                 st.rerun()
             else:
-                st.error("Login developer gagal")
-
-# ======================
-# RESET PASSWORD PAGE
-# ======================
-elif st.session_state.page == "reset":
-
-    # 🔙 TOMBOL KEMBALI
-    if st.button("⬅️ Kembali"):
-        st.session_state.page = "login"
-        st.rerun()
-
-    st.title("🔁 Reset Password")
-
-    email = st.text_input("Email")
-
-    if st.button("Kirim OTP"):
-        cursor.execute("SELECT * FROM admin WHERE email=?", (email,))
-        if cursor.fetchone():
-            otp = str(random.randint(1000, 9999))
-            st.session_state.otp = otp
-            st.success(f"OTP: {otp}")
-        else:
-            st.error("Email tidak ditemukan")
-
-    otp_input = st.text_input("Masukkan OTP")
-    new_pw = st.text_input("Password Baru", type="password")
-
-    if st.button("Reset"):
-        if otp_input == st.session_state.otp:
-            cursor.execute(
-                "UPDATE admin SET password=? WHERE email=?",
-                (hash_password(new_pw), email)
-            )
-            conn.commit()
-            st.success("Password berhasil diubah")
-            st.session_state.page = "login"
-        else:
-            st.error("OTP salah")
+                st.error("Login gagal")
 
 # ======================
 # MAIN APP
 # ======================
-elif st.session_state.login:
+else:
 
-    st.title("📊 KAS KITA")
+    st.title("📊 Dashboard KAS")
 
+    # ================= ADMIN =================
     if st.session_state.role == "admin":
-        st.success(f"Admin {st.session_state.kelas}-{st.session_state.jurusan}")
 
-        nama = st.text_input("Nama")
+        st.success(f"Kelas {st.session_state.kelas} - {st.session_state.jurusan}")
+
+        # INPUT
+        st.subheader("➕ Input Pembayaran")
+
+        nama = st.text_input("Nama Siswa")
         tanggal = st.date_input("Tanggal", datetime.date.today())
         status = st.selectbox("Status", ["Tepat Waktu", "Telat"])
 
@@ -241,32 +166,93 @@ elif st.session_state.login:
                  st.session_state.jurusan)
             )
             conn.commit()
+            st.success("Data tersimpan")
             st.rerun()
 
+        # AMBIL DATA
         df = pd.read_sql(
             "SELECT * FROM kas WHERE kelas=? AND jurusan=?",
             conn,
             params=(st.session_state.kelas, st.session_state.jurusan)
         )
-        st.dataframe(df)
 
+        st.subheader("📋 Data Siswa")
+        st.dataframe(df, use_container_width=True)
+
+        # ================= AI ANALISIS =================
+        st.subheader("🤖 Analisis Otomatis")
+
+        if not df.empty:
+            total = len(df)
+            tepat = len(df[df["status"] == "Tepat Waktu"])
+            telat = len(df[df["status"] == "Telat"])
+
+            persen_telat = (telat / total) * 100
+
+            st.metric("Total Data", total)
+            st.metric("Tepat Waktu", tepat)
+            st.metric("Telat", telat)
+
+            st.bar_chart(df["status"].value_counts())
+
+            # AI Insight
+            if persen_telat < 20:
+                st.success("Performa sangat baik 👍")
+            elif persen_telat < 50:
+                st.warning("Performa cukup, perlu peningkatan ⚠️")
+            else:
+                st.error("Performa buruk ❌")
+
+        else:
+            st.info("Belum ada data")
+
+        # ================= CEK PERFORMA SISWA =================
+        st.subheader("📊 Cek Performa Siswa")
+
+        if not df.empty:
+            siswa = st.selectbox("Pilih Siswa", df["nama"].unique())
+
+            if st.button("Cek Performa"):
+
+                data_siswa = df[df["nama"] == siswa]
+
+                hasil = data_siswa["status"].value_counts()
+
+                st.write(f"Performa: {siswa}")
+
+                st.bar_chart(hasil)
+
+                total = len(data_siswa)
+                telat = len(data_siswa[data_siswa["status"] == "Telat"])
+
+                persen = (telat / total) * 100 if total > 0 else 0
+
+                if persen < 20:
+                    st.success("Siswa disiplin 👍")
+                elif persen < 50:
+                    st.warning("Perlu perhatian ⚠️")
+                else:
+                    st.error("Sering telat ❌")
+
+    # ================= USER =================
     elif st.session_state.role == "user":
-        st.info("User Mode")
+        st.info("Mode User (Read Only)")
         df = pd.read_sql("SELECT * FROM kas", conn)
         st.dataframe(df)
 
+    # ================= DEV =================
     elif st.session_state.role == "dev":
         st.warning("Developer Mode")
 
+        st.subheader("Semua Data")
         df = pd.read_sql("SELECT * FROM kas", conn)
         st.dataframe(df)
 
-        admin_df = pd.read_sql(
-            "SELECT id, username, email, kelas, jurusan FROM admin",
-            conn
-        )
+        st.subheader("Data Admin")
+        admin_df = pd.read_sql("SELECT * FROM admin", conn)
         st.dataframe(admin_df)
 
+    # LOGOUT
     if st.button("Logout"):
         st.session_state.clear()
         st.rerun()
