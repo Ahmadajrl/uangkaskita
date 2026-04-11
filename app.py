@@ -3,9 +3,6 @@ import pandas as pd
 import datetime
 import base64
 
-from sklearn.preprocessing import LabelEncoder
-from sklearn.tree import DecisionTreeClassifier
-
 # ======================
 # CONFIG PAGE
 # ======================
@@ -66,7 +63,7 @@ input, textarea {
 """, unsafe_allow_html=True)
 
 # ======================
-# LOGO (FIX PAKAI BASE64)
+# LOGO BASE64 (TENGAH ATAS)
 # ======================
 def get_base64(file):
     with open(file, "rb") as f:
@@ -76,8 +73,8 @@ try:
     img = get_base64("logo.png")
 
     st.markdown(f"""
-    <div style="position:fixed; top:20px; right:50px; z-index:999;">
-        <img src="data:image/png;base64,{img}" width="50">
+    <div style="text-align:center; margin-top:10px;">
+        <img src="data:image/png;base64,{img}" width="120">
     </div>
     """, unsafe_allow_html=True)
 except:
@@ -117,17 +114,10 @@ except:
     DB_MODE = "SQLITE"
 
 # ======================
-# HEADER + LOGO (ALT CARA GRID)
+# HEADER
 # ======================
-col1, col2 = st.columns([8,1])
-with col1:
-    st.title("📊 Aplikasi Uang Kas Siswa + AI")
-    st.caption(f"Mode Database: {DB_MODE}")
-with col2:
-    try:
-        st.image("logo.png", width=60)
-    except:
-        pass
+st.title("📊 Aplikasi Uang Kas Siswa")
+st.caption(f"Mode Database: {DB_MODE}")
 
 # ======================
 # INPUT DATA
@@ -166,9 +156,9 @@ st.subheader("📋 Data Pembayaran")
 st.dataframe(df, use_container_width=True)
 
 # ======================
-# ANALISIS DATA
+# ANALISIS GLOBAL
 # ======================
-st.subheader("📈 Analisis Data")
+st.subheader("📈 Analisis Keseluruhan")
 
 if not df.empty:
     total = len(df)
@@ -187,39 +177,41 @@ if not df.empty:
     st.bar_chart(chart_data.set_index("Status"))
 
 # ======================
-# AI PREDIKSI
+# STATISTIK PER SISWA (PIE CHART)
 # ======================
-st.subheader("🤖 Prediksi Keterlambatan")
+st.subheader("📊 Statistik Keterlambatan Siswa")
 
-if len(df) > 5:
-    try:
-        le_nama = LabelEncoder()
-        le_status = LabelEncoder()
+if not df.empty:
+    nama_list = df["nama"].unique()
+    nama_pilih = st.selectbox("Pilih Nama Siswa", nama_list)
 
-        df["nama_enc"] = le_nama.fit_transform(df["nama"])
-        df["status_enc"] = le_status.fit_transform(df["status"])
+    if st.button("Lihat Statistik"):
+        data_siswa = df[df["nama"] == nama_pilih]
 
-        X = df[["nama_enc"]]
-        y = df["status_enc"]
+        tepat = len(data_siswa[data_siswa["status"] == "Tepat Waktu"])
+        telat = len(data_siswa[data_siswa["status"] == "Telat"])
 
-        model = DecisionTreeClassifier()
-        model.fit(X, y)
+        if tepat + telat > 0:
+            pie_data = pd.DataFrame({
+                "Status": ["Tepat Waktu", "Telat"],
+                "Jumlah": [tepat, telat]
+            })
 
-        nama_pred = st.selectbox("Pilih Nama untuk Prediksi", df["nama"].unique())
+            st.write(f"Statistik untuk: **{nama_pilih}**")
 
-        if st.button("Prediksi"):
-            nama_encoded = le_nama.transform([nama_pred])
-            hasil = model.predict([nama_encoded])
-            hasil_label = le_status.inverse_transform(hasil)
-
-            st.success(f"Prediksi: {hasil_label[0]}")
-
-    except Exception as e:
-        st.error(f"Error AI: {e}")
+            st.pyplot(
+                pie_data.set_index("Status").plot.pie(
+                    y="Jumlah",
+                    autopct='%1.1f%%',
+                    figsize=(5,5)
+                ).get_figure()
+            )
+        else:
+            st.warning("Belum ada data untuk siswa ini")
 else:
-    st.warning("Data minimal 6 untuk menjalankan AI")
+    st.warning("Belum ada data")
 
 # ======================
 # FOOTER
 # ======================
-st.write("© Project Uang Kas + AI")
+st.write("© Project Uang Kas")
