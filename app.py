@@ -1,4 +1,4 @@
-import streamlit as st
+import streamlit as st 
 import pandas as pd
 import datetime
 import sqlite3
@@ -250,35 +250,44 @@ else:
             total = df["nominal"].sum()
             st.metric("💰 Total Kas", format_rupiah(total))
 
-        # STATISTIK
-        st.subheader("📈 Statistik Pembayaran")
+        # ================= HAPUS DATA (DIKEMBALIKAN) =================
+        st.subheader("🗑️ Hapus Data")
+        konfirmasi = st.checkbox("Saya yakin ingin menghapus data")
 
-        if not df.empty:
-            tepat = len(df[df["status"] == "Tepat Waktu"])
-            telat = len(df[df["status"] == "Telat"])
+        col1, col2, col3 = st.columns(3)
 
-            col1, col2 = st.columns(2)
-            col1.metric("Tepat Waktu", tepat)
-            col2.metric("Telat", telat)
+        with col1:
+            id_hapus = st.number_input("Hapus ID", step=1)
+            if st.button("Hapus ID") and konfirmasi:
+                cursor.execute("DELETE FROM kas WHERE id=?", (id_hapus,))
+                conn.commit()
+                st.success("Data berhasil dihapus")
+                st.rerun()
 
-            st.bar_chart(df["status"].value_counts())
+        with col2:
+            if not df.empty:
+                siswa_hapus = st.selectbox("Hapus Siswa", df["nama"].unique())
+                if st.button("Hapus Siswa") and konfirmasi:
+                    cursor.execute(
+                        "DELETE FROM kas WHERE nama=? AND kelas=? AND jurusan=?",
+                        (siswa_hapus,
+                         st.session_state.kelas,
+                         st.session_state.jurusan)
+                    )
+                    conn.commit()
+                    st.success("Data siswa dihapus")
+                    st.rerun()
 
-        # PER SISWA
-        st.subheader("📊 Cek Performa Siswa")
-
-        if not df.empty:
-            siswa = st.selectbox("Pilih Siswa", sorted(df["nama"].unique()))
-
-            if st.button("Cek Performa"):
-                data_siswa = df[df["nama"] == siswa]
-                hasil = data_siswa["status"].value_counts()
-                st.bar_chart(hasil)
-
-        # TABEL PER BULAN
-        if not df.empty:
-            for bulan in sorted(df["bulan"].unique()):
-                st.subheader(f"📅 {bulan}")
-                st.dataframe(df[df["bulan"] == bulan])
+        with col3:
+            if st.button("Hapus Semua") and konfirmasi:
+                cursor.execute(
+                    "DELETE FROM kas WHERE kelas=? AND jurusan=?",
+                    (st.session_state.kelas,
+                     st.session_state.jurusan)
+                )
+                conn.commit()
+                st.success("Semua data dihapus")
+                st.rerun()
 
     # ================= USER =================
     elif st.session_state.role == "user":
