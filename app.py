@@ -253,6 +253,35 @@ else:
             total = df["nominal"].sum()
             st.metric("💰 Total Kas", format_rupiah(total))
 
+        # ================= STATISTIK GLOBAL =================
+        st.subheader("📈 Statistik Pembayaran")
+
+        if not df.empty:
+            st.bar_chart(df["status"].value_counts())
+
+        # ================= STATISTIK PER SISWA =================
+        st.subheader("📊 Cek Performa Siswa")
+
+        if not df.empty:
+            siswa = st.selectbox("Pilih Siswa", sorted(df["nama"].unique()))
+
+            if st.button("Cek Performa"):
+                data_siswa = df[df["nama"] == siswa]
+
+                hasil = data_siswa["status"].value_counts()
+                st.bar_chart(hasil)
+
+                total = len(data_siswa)
+                telat = len(data_siswa[data_siswa["status"] == "Telat"])
+                persen = (telat / total) * 100 if total > 0 else 0
+
+                if persen < 20:
+                    st.success("Performa sangat baik 👍")
+                elif persen < 50:
+                    st.warning("Perlu peningkatan ⚠️")
+                else:
+                    st.error("Sering telat ❌")
+
         # TABEL PER BULAN
         if not df.empty:
             for bulan in sorted(df["bulan"].unique()):
@@ -274,11 +303,11 @@ else:
 
         with col2:
             if not df.empty:
-                siswa = st.selectbox("Hapus Siswa", df["nama"].unique())
+                siswa_hapus = st.selectbox("Hapus Siswa", df["nama"].unique())
                 if st.button("Hapus Siswa") and konfirmasi:
                     cursor.execute(
                         "DELETE FROM kas WHERE nama=? AND kelas=? AND jurusan=?",
-                        (siswa, st.session_state.kelas, st.session_state.jurusan)
+                        (siswa_hapus, st.session_state.kelas, st.session_state.jurusan)
                     )
                     conn.commit()
                     st.rerun()
