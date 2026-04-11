@@ -10,12 +10,13 @@ import random
 st.set_page_config(layout="wide")
 
 # ======================
-# DATABASE INIT
+# DATABASE INIT (ANTI ERROR TOTAL)
 # ======================
 def init_db():
     conn = sqlite3.connect("kas.db", check_same_thread=False)
     cursor = conn.cursor()
 
+    # tabel utama
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS kas (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -39,7 +40,26 @@ def init_db():
     ''')
 
     conn.commit()
+
+    # ===== FIX KOLOM (PENTING BANGET)
+    def ensure_column(table, column):
+        cursor.execute(f"PRAGMA table_info({table})")
+        columns = [col[1] for col in cursor.fetchall()]
+
+        if column not in columns:
+            try:
+                cursor.execute(f"ALTER TABLE {table} ADD COLUMN {column} TEXT")
+                conn.commit()
+            except:
+                pass
+
+    ensure_column("kas", "kelas")
+    ensure_column("kas", "jurusan")
+    ensure_column("admin", "kelas")
+    ensure_column("admin", "jurusan")
+
     return conn, cursor
+
 
 conn, cursor = init_db()
 
@@ -70,7 +90,7 @@ if not st.session_state.login:
 
         menu = st.radio("Menu", ["Login", "Register", "Lupa Password"])
 
-        # ================= LOGIN =================
+        # ===== LOGIN =====
         if menu == "Login":
             username = st.text_input("Username")
             password = st.text_input("Password", type="password")
@@ -80,7 +100,7 @@ if not st.session_state.login:
             if st.button("Login"):
                 cursor.execute(
                     """SELECT * FROM admin 
-                       WHERE username=? AND password=? AND kelas=? AND jurusan=?""",
+                    WHERE username=? AND password=? AND kelas=? AND jurusan=?""",
                     (username, password, kelas, jurusan)
                 )
                 data = cursor.fetchone()
@@ -90,12 +110,12 @@ if not st.session_state.login:
                     st.session_state.role = "admin"
                     st.session_state.kelas = kelas
                     st.session_state.jurusan = jurusan
-                    st.success(f"Login berhasil ({kelas} - {jurusan})")
+                    st.success("Login berhasil")
                     st.rerun()
                 else:
-                    st.error("Data login tidak sesuai!")
+                    st.error("Login gagal")
 
-        # ================= REGISTER =================
+        # ===== REGISTER =====
         elif menu == "Register":
             user = st.text_input("Username Baru")
             pw = st.text_input("Password Baru", type="password")
@@ -105,7 +125,7 @@ if not st.session_state.login:
 
             if st.button("Daftar"):
 
-                # CEK 1 KELAS 1 ADMIN
+                # CEK DUPLIKAT
                 cursor.execute(
                     "SELECT * FROM admin WHERE kelas=? AND jurusan=?",
                     (kelas, jurusan)
@@ -124,14 +144,14 @@ if not st.session_state.login:
                     conn.commit()
                     st.success("Akun berhasil dibuat!")
 
-        # ================= LUPA PASSWORD =================
+        # ===== LUPA PASSWORD =====
         elif menu == "Lupa Password":
             email = st.text_input("Email")
 
             if st.button("Kirim OTP"):
                 otp = str(random.randint(1000, 9999))
                 st.session_state.otp = otp
-                st.warning(f"OTP (simulasi): {otp}")
+                st.warning(f"OTP: {otp}")
 
             otp_input = st.text_input("Masukkan OTP")
             new_pw = st.text_input("Password Baru", type="password")
@@ -161,14 +181,12 @@ else:
     st.title("📊 KAS KITA")
 
     if st.session_state.role == "admin":
-        st.success(f"Admin: Kelas {st.session_state.kelas} | {st.session_state.jurusan}")
+        st.success(f"Kelas {st.session_state.kelas} - {st.session_state.jurusan}")
     else:
         st.info("User (Read Only)")
 
-    # ================= INPUT
+    # ===== INPUT =====
     if st.session_state.role == "admin":
-        st.subheader("➕ Input Pembayaran")
-
         nama = st.text_input("Nama Siswa")
         tanggal = st.date_input("Tanggal", datetime.date.today())
         status = st.selectbox("Status", ["Tepat Waktu", "Telat"])
@@ -177,7 +195,7 @@ else:
             if nama:
                 cursor.execute(
                     """INSERT INTO kas (nama, tanggal, status, kelas, jurusan)
-                       VALUES (?, ?, ?, ?, ?)""",
+                    VALUES (?, ?, ?, ?, ?)""",
                     (nama, str(tanggal), status,
                      st.session_state.kelas,
                      st.session_state.jurusan)
@@ -185,10 +203,8 @@ else:
                 conn.commit()
                 st.success("Data tersimpan")
                 st.rerun()
-            else:
-                st.warning("Nama kosong")
 
-    # ================= AMBIL DATA
+    # ===== AMBIL DATA =====
     if st.session_state.role == "admin":
         df = pd.read_sql(
             "SELECT * FROM kas WHERE kelas=? AND jurusan=?",
@@ -198,19 +214,9 @@ else:
     else:
         df = pd.read_sql("SELECT * FROM kas", conn)
 
-    # ================= TABEL
-    st.subheader("📋 Data")
     st.dataframe(df, use_container_width=True)
 
-    # ================= ANALISIS
-    st.subheader("📈 Statistik")
-
-    if not df.empty:
-        st.bar_chart(df["status"].value_counts())
-    else:
-        st.warning("Belum ada data")
-
-    # ================= LOGOUT
+    # ===== LOGOUT =====
     if st.button("Logout"):
         st.session_state.login = False
         st.session_state.role = None
@@ -218,7 +224,4 @@ else:
         st.session_state.jurusan = None
         st.rerun()
 
-# ======================
-# FOOTER
-# ======================
 st.write("© kaskita 2026")
