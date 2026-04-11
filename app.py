@@ -257,7 +257,30 @@ else:
         st.subheader("📈 Statistik Pembayaran")
 
         if not df.empty:
-            st.bar_chart(df["status"].value_counts())
+            tepat = len(df[df["status"] == "Tepat Waktu"])
+            telat = len(df[df["status"] == "Telat"])
+            total_data = len(df)
+
+            col1, col2, col3 = st.columns(3)
+
+            with col1:
+                st.metric("Total Data", total_data)
+
+            with col2:
+                st.metric("Tepat Waktu", tepat)
+
+            with col3:
+                st.metric("Telat", telat)
+
+            chart_data = pd.DataFrame({
+                "Status": ["Tepat Waktu", "Telat"],
+                "Jumlah": [tepat, telat]
+            }).set_index("Status")
+
+            st.bar_chart(chart_data)
+
+        else:
+            st.info("Belum ada data")
 
         # ================= STATISTIK PER SISWA =================
         st.subheader("📊 Cek Performa Siswa")
