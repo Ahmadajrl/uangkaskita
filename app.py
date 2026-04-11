@@ -3,6 +3,7 @@ import pandas as pd
 import datetime
 import sqlite3
 import hashlib
+import re
 
 # ======================
 # CONFIG
@@ -22,21 +23,16 @@ def hash_password(password):
 # FORMAT RUPIAH
 # ======================
 def format_rupiah(angka):
-    try:
-        return f"Rp.{int(angka):,}".replace(",", ".")
-    except:
-        return "Rp.0"
+    return "Rp.{:,.0f}".format(angka).replace(",", ".")
 
 # ======================
-# PARSE INPUT NOMINAL
+# PARSE NOMINAL (FLEKSIBEL)
 # ======================
-def parse_rupiah(text):
-    try:
-        text = text.replace("Rp", "").replace("rp", "")
-        text = text.replace(".", "").replace(",", "")
-        return float(text)
-    except:
-        return 0
+def parse_nominal(nominal_str):
+    if nominal_str:
+        angka = re.sub(r'[^0-9]', '', nominal_str)
+        return int(angka) if angka else 0
+    return 0
 
 # ======================
 # DB INIT
@@ -54,7 +50,7 @@ def init_db():
         kelas TEXT,
         jurusan TEXT,
         keterangan TEXT,
-        nominal REAL
+        nominal INTEGER
     )
     ''')
 
@@ -172,19 +168,19 @@ else:
 
         st.success(f"Kelas {st.session_state.kelas} - {st.session_state.jurusan}")
 
-        # INPUT
+        # ================= INPUT =================
         st.subheader("➕ Input Pembayaran")
 
         nama = st.text_input("Nama Siswa")
         tanggal = st.date_input("Tanggal", datetime.date.today())
         status = st.selectbox("Status", ["Tepat Waktu", "Telat"])
         keterangan = st.text_input("Keterangan (contoh: Lunas)")
-        nominal_input = st.text_input("Masukan nominal kas (bebas, contoh: 2.000 / 2000 / Rp2000)")
+        nominal_input = st.text_input("Masukan Nominal Kas (bebas format)")
 
         if st.button("Simpan"):
-            nominal = parse_rupiah(nominal_input)
+            if nama:
+                nominal = parse_nominal(nominal_input)
 
-            if nama and nominal > 0:
                 cursor.execute(
                     "INSERT INTO kas VALUES (NULL,?,?,?,?,?,?,?)",
                     (nama, str(tanggal), status,
@@ -197,60 +193,96 @@ else:
                 st.success("Data tersimpan")
                 st.rerun()
             else:
-                st.warning("Nama atau nominal tidak valid")
+                st.warning("Nama tidak boleh kosong")
 
-        # DATA
+        # ================= DATA =================
         df = pd.read_sql(
             "SELECT * FROM kas WHERE kelas=? AND jurusan=?",
             conn,
             params=(st.session_state.kelas, st.session_state.jurusan)
         )
 
-        # FORMAT NOMINAL
-        if not df.empty:
-            df["nominal"] = df["nominal"].fillna(0)
-
         st.subheader("📋 Data Siswa")
-        df_display = df.copy()
-        if not df_display.empty:
-            df_display["nominal"] = df_display["nominal"].apply(format_rupiah)
-        st.dataframe(df_display, use_container_width=True)
+        st.dataframe(df, use_container_width=True)
 
-        # TOTAL KAS
+        # ================= TOTAL KAS =================
+        total_kas = df["nominal"].sum() if not df.empty else 0
         st.subheader("💰 Total Kas")
-        if not df.empty:
-            total_kas = df["nominal"].sum()
-            st.metric("Total Kas Kelas Ini", format_rupiah(total_kas))
-        else:
-            st.info("Belum ada data")
+        st.success(format_rupiah(total_kas))
+
+        # ================= HAPUS DATA =================
+        st.subheader("🗑️ Hapus Data")
+
+        konfirmasi = st.checkbox("Saya yakin ingin menghapus data")
+
+        col1, col2, col3 = st.columns(3)
+
+        # Hapus ID
+        with col1:
+            id_hapus = st.number_input("Hapus berdasarkan ID", step=1)
+            if st.button("Hapus ID") and konfirmasi:
+                cursor.execute("DELETE FROM kas WHERE id=?", (id_hapus,))
+                conn.commit()
+                st.success("Data dihapus")
+                st.rerun()
+
+        # Hapus per siswa
+        with col2:
+            if not df.empty:
+                siswa = st.selectbox("Pilih siswa", df["nama"].unique())
+                if st.button("Hapus Siswa") and konfirmasi:
+                    cursor.execute(
+                        "DELETE FROM kas WHERE nama=? AND kelas=? AND jurusan=?",
+                        (siswa,
+                         st.session_state.kelas,
+                         st.session_state.jurusan)
+                    )
+                    conn.commit()
+                    st.success("Data siswa dihapus")
+                    st.rerun()
+
+        # Hapus semua
+        with col3:
+            if st.button("Hapus Semua Data") and konfirmasi:
+                cursor.execute(
+                    "DELETE FROM kas WHERE kelas=? AND jurusan=?",
+                    (st.session_state.kelas,
+                     st.session_state.jurusan)
+                )
+                conn.commit()
+                st.success("Semua data dihapus")
+                st.rerun()
 
         # ================= ANALISIS =================
         st.subheader("📈 Analisis")
+
         if not df.empty:
             st.bar_chart(df["status"].value_counts())
         else:
             st.info("Belum ada data")
 
-        # ================= CEK PERFORMA =================
-        st.subheader("🎯 Cek Performa Siswa")
+        # ================= CEK PERFORMA SISWA =================
+        st.subheader("📊 Cek Performa Siswa")
 
         if not df.empty:
             siswa = st.selectbox("Pilih Siswa", df["nama"].unique())
 
             if st.button("Cek Performa"):
                 data_siswa = df[df["nama"] == siswa]
+
                 hasil = data_siswa["status"].value_counts()
 
                 st.bar_chart(hasil)
 
                 total = len(data_siswa)
                 telat = len(data_siswa[data_siswa["status"] == "Telat"])
+
                 persen = (telat / total) * 100 if total > 0 else 0
 
                 if persen < 20:
-                    st.success("Sangat disiplin 👍")
+                    st.success("Siswa disiplin 👍")
                 elif persen < 50:
-                    st.warning("Cukup baik ⚠️")
+                    st.warning("Perlu perhatian ⚠️")
                 else:
                     st.error("Sering telat ❌")
 
@@ -258,23 +290,19 @@ else:
     elif st.session_state.role == "user":
         st.info("Mode User")
         df = pd.read_sql("SELECT * FROM kas", conn)
-        df["nominal"] = df["nominal"].fillna(0).apply(format_rupiah)
         st.dataframe(df)
 
     # ================= DEV =================
     elif st.session_state.role == "dev":
         st.warning("Developer Mode")
 
-        st.subheader("Semua Data")
-        df = pd.read_sql("SELECT * FROM kas", conn)
-        df["nominal"] = df["nominal"].fillna(0).apply(format_rupiah)
-        st.dataframe(df)
+        st.subheader("Semua Data Kas")
+        st.dataframe(pd.read_sql("SELECT * FROM kas", conn))
 
         st.subheader("Data Admin")
-        admin_df = pd.read_sql("SELECT * FROM admin", conn)
-        st.dataframe(admin_df)
+        st.dataframe(pd.read_sql("SELECT * FROM admin", conn))
 
-    # LOGOUT
+    # ================= LOGOUT =================
     if st.button("Logout"):
         st.session_state.clear()
         st.rerun()
