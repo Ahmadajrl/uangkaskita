@@ -2,15 +2,14 @@ import streamlit as st
 import pandas as pd
 import datetime
 import base64
-import matplotlib.pyplot as plt
 
 # ======================
-# CONFIG PAGE
+# CONFIG
 # ======================
 st.set_page_config(layout="wide")
 
 # ======================
-# CUSTOM CSS
+# CSS
 # ======================
 st.markdown("""
 <style>
@@ -18,7 +17,7 @@ st.markdown("""
     background-color: #01023B;
     color: white;
 }
-label, .stMarkdown, .stText, p {
+label, p {
     color: white !important;
 }
 .stButton > button {
@@ -26,18 +25,6 @@ label, .stMarkdown, .stText, p {
     color: black;
     font-weight: bold;
     border-radius: 10px;
-}
-.stButton > button:hover {
-    background-color: #07c96f;
-    color: white;
-}
-input, textarea {
-    background-color: #02044F !important;
-    color: white !important;
-}
-[data-baseweb="select"] {
-    background-color: #02044F !important;
-    color: white !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -57,28 +44,15 @@ try:
     </div>
     """, unsafe_allow_html=True)
 except:
-    st.warning("Logo tidak ditemukan!")
+    pass
 
 # ======================
-# DATABASE
+# DATABASE (PAKAI SQLITE AGAR AMAN CLOUD)
 # ======================
-try:
-    import mysql.connector
-    conn = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="091206",
-        database="kas_siswa"
-    )
-    DB_MODE = "MYSQL"
-except:
-    import sqlite3
-    conn = sqlite3.connect("kas.db", check_same_thread=False)
-    DB_MODE = "SQLITE"
-
+import sqlite3
+conn = sqlite3.connect("kas.db", check_same_thread=False)
 cursor = conn.cursor()
 
-# buat tabel jika belum ada
 cursor.execute('''
 CREATE TABLE IF NOT EXISTS kas (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -93,10 +67,9 @@ conn.commit()
 # HEADER
 # ======================
 st.title("📊 Aplikasi Uang Kas Siswa")
-st.caption(f"Mode Database: {DB_MODE}")
 
 # ======================
-# INPUT DATA
+# INPUT
 # ======================
 st.subheader("➕ Input Pembayaran")
 
@@ -105,27 +78,21 @@ tanggal = st.date_input("Tanggal Bayar", datetime.date.today())
 status = st.selectbox("Status", ["Tepat Waktu", "Telat"])
 
 if st.button("Simpan"):
-    if nama.strip() != "":
-        if DB_MODE == "MYSQL":
-            query = "INSERT INTO kas (nama, tanggal, status) VALUES (%s, %s, %s)"
-        else:
-            query = "INSERT INTO kas (nama, tanggal, status) VALUES (?, ?, ?)"
-
-        cursor.execute(query, (nama, str(tanggal), status))
+    if nama.strip():
+        cursor.execute(
+            "INSERT INTO kas (nama, tanggal, status) VALUES (?, ?, ?)",
+            (nama, str(tanggal), status)
+        )
         conn.commit()
-
         st.success("Data berhasil disimpan!")
     else:
         st.warning("Nama tidak boleh kosong!")
 
 # ======================
-# AMBIL DATA
+# DATA
 # ======================
 df = pd.read_sql("SELECT * FROM kas", conn)
 
-# ======================
-# TAMPILKAN DATA
-# ======================
 st.subheader("📋 Data Pembayaran")
 st.dataframe(df, use_container_width=True)
 
@@ -135,25 +102,15 @@ st.dataframe(df, use_container_width=True)
 st.subheader("📈 Analisis Keseluruhan")
 
 if not df.empty:
-    total = len(df)
-    telat = len(df[df["status"] == "Telat"])
-    tepat = len(df[df["status"] == "Tepat Waktu"])
-
-    st.write(f"Total Data: {total}")
-    st.write(f"Tepat Waktu: {tepat}")
-    st.write(f"Telat: {telat}")
-
-    chart_data = pd.DataFrame({
-        "Status": ["Tepat Waktu", "Telat"],
-        "Jumlah": [tepat, telat]
-    })
+    chart_data = df["status"].value_counts().reset_index()
+    chart_data.columns = ["Status", "Jumlah"]
 
     st.bar_chart(chart_data.set_index("Status"))
 else:
     st.warning("Belum ada data")
 
 # ======================
-# PIE CHART PER SISWA
+# PIE PER SISWA (TANPA MATPLOTLIB)
 # ======================
 st.subheader("📊 Statistik Keterlambatan Siswa")
 
@@ -164,28 +121,20 @@ if not df.empty:
     if st.button("Lihat Statistik"):
         data_siswa = df[df["nama"] == nama_pilih]
 
-        tepat = len(data_siswa[data_siswa["status"] == "Tepat Waktu"])
-        telat = len(data_siswa[data_siswa["status"] == "Telat"])
-
-        if tepat + telat > 0:
-            pie_data = pd.DataFrame({
-                "Status": ["Tepat Waktu", "Telat"],
-                "Jumlah": [tepat, telat]
-            })
+        if not data_siswa.empty:
+            pie_data = data_siswa["status"].value_counts().reset_index()
+            pie_data.columns = ["Status", "Jumlah"]
 
             st.write(f"Statistik untuk: **{nama_pilih}**")
 
-            # PIE CHART FIX
-            fig, ax = plt.subplots()
-            ax.pie(
-                pie_data["Jumlah"],
-                labels=pie_data["Status"],
-                autopct='%1.1f%%',
-                startangle=90
-            )
-            ax.set_title("Persentase Pembayaran")
-
-            st.pyplot(fig)
+            # PIE CHART BAWAAN STREAMLIT
+            st.plotly_chart({
+                "data": [{
+                    "labels": pie_data["Status"],
+                    "values": pie_data["Jumlah"],
+                    "type": "pie"
+                }]
+            })
         else:
             st.warning("Belum ada data untuk siswa ini")
 else:
