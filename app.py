@@ -209,11 +209,11 @@ else:
 
     st.title("📊 Dashboard KAS")
 
+    # ================= ADMIN =================
     if st.session_state.role == "admin":
 
         st.success(f"Kelas {st.session_state.kelas} - {st.session_state.jurusan}")
 
-        # INPUT
         st.subheader("➕ Input Pembayaran")
 
         nama = st.text_input("Nama Siswa")
@@ -237,7 +237,6 @@ else:
             st.success("Data tersimpan")
             st.rerun()
 
-        # DATA
         df = pd.read_sql(
             "SELECT * FROM kas WHERE kelas=? AND jurusan=?",
             conn,
@@ -248,41 +247,23 @@ else:
             df["tanggal"] = pd.to_datetime(df["tanggal"]).dt.strftime("%Y-%m-%d")
             df["bulan"] = pd.to_datetime(df["tanggal"]).dt.strftime("%B %Y")
 
-        # TOTAL
-        if not df.empty:
             total = df["nominal"].sum()
             st.metric("💰 Total Kas", format_rupiah(total))
 
-        # ================= STATISTIK GLOBAL =================
+        # ================= STATISTIK =================
         st.subheader("📈 Statistik Pembayaran")
 
         if not df.empty:
             tepat = len(df[df["status"] == "Tepat Waktu"])
             telat = len(df[df["status"] == "Telat"])
-            total_data = len(df)
 
-            col1, col2, col3 = st.columns(3)
+            col1, col2 = st.columns(2)
+            col1.metric("Tepat Waktu", tepat)
+            col2.metric("Telat", telat)
 
-            with col1:
-                st.metric("Total Data", total_data)
+            st.bar_chart(df["status"].value_counts())
 
-            with col2:
-                st.metric("Tepat Waktu", tepat)
-
-            with col3:
-                st.metric("Telat", telat)
-
-            chart_data = pd.DataFrame({
-                "Status": ["Tepat Waktu", "Telat"],
-                "Jumlah": [tepat, telat]
-            }).set_index("Status")
-
-            st.bar_chart(chart_data)
-
-        else:
-            st.info("Belum ada data")
-
-        # ================= STATISTIK PER SISWA =================
+        # ================= PER SISWA =================
         st.subheader("📊 Cek Performa Siswa")
 
         if not df.empty:
@@ -290,64 +271,35 @@ else:
 
             if st.button("Cek Performa"):
                 data_siswa = df[df["nama"] == siswa]
-
                 hasil = data_siswa["status"].value_counts()
+
                 st.bar_chart(hasil)
 
-                total = len(data_siswa)
-                telat = len(data_siswa[data_siswa["status"] == "Telat"])
-                persen = (telat / total) * 100 if total > 0 else 0
-
-                if persen < 20:
-                    st.success("Performa sangat baik 👍")
-                elif persen < 50:
-                    st.warning("Perlu peningkatan ⚠️")
-                else:
-                    st.error("Sering telat ❌")
-
-        # TABEL PER BULAN
+        # ================= TABEL PER BULAN =================
         if not df.empty:
             for bulan in sorted(df["bulan"].unique()):
                 st.subheader(f"📅 {bulan}")
                 st.dataframe(df[df["bulan"] == bulan])
 
-        # ================= HAPUS DATA =================
-        st.subheader("🗑️ Hapus Data")
-        konfirmasi = st.checkbox("Saya yakin")
-
-        col1, col2, col3 = st.columns(3)
-
-        with col1:
-            id_hapus = st.number_input("Hapus ID", step=1)
-            if st.button("Hapus ID") and konfirmasi:
-                cursor.execute("DELETE FROM kas WHERE id=?", (id_hapus,))
-                conn.commit()
-                st.rerun()
-
-        with col2:
-            if not df.empty:
-                siswa_hapus = st.selectbox("Hapus Siswa", df["nama"].unique())
-                if st.button("Hapus Siswa") and konfirmasi:
-                    cursor.execute(
-                        "DELETE FROM kas WHERE nama=? AND kelas=? AND jurusan=?",
-                        (siswa_hapus, st.session_state.kelas, st.session_state.jurusan)
-                    )
-                    conn.commit()
-                    st.rerun()
-
-        with col3:
-            if st.button("Hapus Semua") and konfirmasi:
-                cursor.execute(
-                    "DELETE FROM kas WHERE kelas=? AND jurusan=?",
-                    (st.session_state.kelas, st.session_state.jurusan)
-                )
-                conn.commit()
-                st.rerun()
-
+    # ================= USER =================
     elif st.session_state.role == "user":
-        df = pd.read_sql("SELECT * FROM kas", conn)
-        st.dataframe(df)
 
+        st.subheader("📋 Data Pembayaran")
+
+        df = pd.read_sql("SELECT * FROM kas", conn)
+
+        if not df.empty:
+            df["tanggal"] = pd.to_datetime(df["tanggal"]).dt.strftime("%Y-%m-%d")
+            df["bulan"] = pd.to_datetime(df["tanggal"]).dt.strftime("%B %Y")
+
+            for bulan in sorted(df["bulan"].unique()):
+                st.subheader(f"📅 {bulan}")
+                st.dataframe(df[df["bulan"] == bulan])
+
+        else:
+            st.info("Belum ada data")
+
+    # ================= DEV =================
     elif st.session_state.role == "dev":
         st.dataframe(pd.read_sql("SELECT * FROM kas", conn))
         st.dataframe(pd.read_sql("SELECT * FROM admin", conn))
