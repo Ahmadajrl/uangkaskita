@@ -118,7 +118,7 @@ if not st.session_state.login and st.session_state.page == "role":
 # ======================
 elif not st.session_state.login:
 
-    if st.button("Kembali"):
+    if st.button("⬅️ Kembali"):
         st.session_state.page = "role"
         st.rerun()
 
@@ -128,13 +128,12 @@ elif not st.session_state.login:
 
         menu = st.radio("Menu", ["Login", "Register", "Lupa Password"])
 
-        # ===== LOGIN =====
+        # LOGIN
         if menu == "Login":
-
             username = st.text_input("Username")
             password = st.text_input("Password", type="password")
             kelas = st.selectbox("Kelas", ["10", "11", "12"])
-            jurusan = st.text_input("Jurusan (contoh: TKJ 1)")
+            jurusan = st.text_input("Jurusan")
 
             if st.button("Login"):
                 cursor.execute("SELECT * FROM admin WHERE username=?", (username,))
@@ -152,56 +151,40 @@ elif not st.session_state.login:
                     st.session_state.jurusan = jurusan.upper()
                     st.rerun()
 
-        # ===== REGISTER =====
+        # REGISTER
         elif menu == "Register":
-
-            st.subheader("Daftar Admin Baru")
-
             user = st.text_input("Username Baru")
             pw = st.text_input("Password Baru", type="password")
             email = st.text_input("Email")
             kelas = st.selectbox("Kelas", ["10", "11", "12"])
-            jurusan = st.text_input("Jurusan (contoh: TKJ 1)")
+            jurusan = st.text_input("Jurusan")
 
             if st.button("Daftar"):
+                cursor.execute(
+                    "SELECT * FROM admin WHERE kelas=? AND jurusan=?",
+                    (kelas, jurusan.upper())
+                )
 
-                if not user or not pw or not email or not jurusan:
-                    st.warning("Semua field wajib diisi")
+                if cursor.fetchone():
+                    st.error("Admin sudah ada")
                 else:
                     cursor.execute(
-                        "SELECT * FROM admin WHERE kelas=? AND jurusan=?",
-                        (kelas, jurusan.upper())
+                        "INSERT INTO admin VALUES (NULL,?,?,?,?,?)",
+                        (user, hash_password(pw), email, kelas, jurusan.upper())
                     )
+                    conn.commit()
+                    st.success("Akun dibuat")
 
-                    if cursor.fetchone():
-                        st.error("Admin untuk kelas & jurusan ini sudah ada!")
-                    else:
-                        cursor.execute(
-                            """INSERT INTO admin 
-                            (username,password,email,kelas,jurusan)
-                            VALUES (?,?,?,?,?)""",
-                            (user,
-                             hash_password(pw),
-                             email,
-                             kelas,
-                             jurusan.upper())
-                        )
-                        conn.commit()
-                        st.success("Akun admin berhasil dibuat!")
-
-        # ===== LUPA PASSWORD =====
+        # LUPA PASSWORD
         elif menu == "Lupa Password":
-
-            st.subheader("Reset Password")
-
-            email = st.text_input("Masukkan Email")
+            email = st.text_input("Email")
 
             if st.button("Kirim OTP"):
                 cursor.execute("SELECT * FROM admin WHERE email=?", (email,))
                 if cursor.fetchone():
                     otp = str(random.randint(1000, 9999))
                     st.session_state.otp = otp
-                    st.success(f"OTP (simulasi): {otp}")
+                    st.success(f"OTP: {otp}")
                 else:
                     st.error("Email tidak ditemukan")
 
@@ -219,9 +202,7 @@ elif not st.session_state.login:
                 else:
                     st.error("OTP salah")
 
-    # ================= DEV =================
     elif st.session_state.role == "dev":
-
         user = st.text_input("Username")
         pw = st.text_input("Password", type="password")
 
@@ -237,35 +218,35 @@ elif not st.session_state.login:
 # ======================
 else:
 
-    st.title("Dashboard KAS")
+    st.title("📊 Dashboard KAS")
 
+    # ================= ADMIN =================
     if st.session_state.role == "admin":
 
         st.success(f"Kelas {st.session_state.kelas} - {st.session_state.jurusan}")
 
-        st.subheader("Input Pembayaran")
+        # INPUT
+        st.subheader("➕ Input Pembayaran")
 
         nama = st.text_input("Nama Siswa")
         tanggal = st.date_input("Tanggal", datetime.date.today())
         status = st.selectbox("Status", ["Tepat Waktu", "Telat"])
-        keterangan = st.text_input("Keterangan (contoh: Lunas)")
-        nominal_input = st.text_input("Masukan Nominal Kas (bebas format)")
+        keterangan = st.text_input("Keterangan")
+        nominal_input = st.text_input("Nominal")
 
         if st.button("Simpan"):
-            if nama:
-                nominal = parse_nominal(nominal_input)
+            nominal = parse_nominal(nominal_input)
 
-                cursor.execute(
-                    "INSERT INTO kas VALUES (NULL,?,?,?,?,?,?,?)",
-                    (nama, str(tanggal), status,
-                     st.session_state.kelas,
-                     st.session_state.jurusan,
-                     keterangan,
-                     nominal)
-                )
-                conn.commit()
-                st.success("Data tersimpan")
-                st.rerun()
+            cursor.execute(
+                "INSERT INTO kas VALUES (NULL,?,?,?,?,?,?,?)",
+                (nama, str(tanggal), status,
+                 st.session_state.kelas,
+                 st.session_state.jurusan,
+                 keterangan,
+                 nominal)
+            )
+            conn.commit()
+            st.rerun()
 
         df = pd.read_sql(
             "SELECT * FROM kas WHERE kelas=? AND jurusan=?",
@@ -273,18 +254,61 @@ else:
             params=(st.session_state.kelas, st.session_state.jurusan)
         )
 
+        # SORT A-Z
+        df = df.sort_values(by="nama")
+
+        st.subheader("📋 Data Siswa")
         st.dataframe(df, use_container_width=True)
 
+        # TOTAL
         total_kas = df["nominal"].sum() if not df.empty else 0
-        st.success(format_rupiah(total_kas))
+        st.success(f"Total Kas: {format_rupiah(total_kas)}")
 
+        # ================= PER BULAN =================
+        st.subheader("📅 Kas Per Bulan")
+
+        if not df.empty:
+            df["bulan"] = pd.to_datetime(df["tanggal"]).dt.to_period("M")
+            per_bulan = df.groupby("bulan")["nominal"].sum()
+            st.bar_chart(per_bulan)
+
+        # ================= ANALISIS =================
+        st.subheader("📈 Analisis")
+        if not df.empty:
+            st.bar_chart(df["status"].value_counts())
+
+        # ================= CEK SISWA =================
+        st.subheader("📊 Cek Performa Siswa")
+
+        if not df.empty:
+            siswa = st.selectbox("Pilih Siswa", df["nama"].unique())
+
+            if st.button("Cek Performa"):
+                data_siswa = df[df["nama"] == siswa]
+                st.bar_chart(data_siswa["status"].value_counts())
+
+    # ================= USER =================
     elif st.session_state.role == "user":
-        st.dataframe(pd.read_sql("SELECT * FROM kas", conn))
 
+        st.info("Mode User")
+
+        df = pd.read_sql("SELECT * FROM kas", conn)
+
+        if not df.empty:
+            jurusan_list = df["jurusan"].unique()
+
+            for j in jurusan_list:
+                st.subheader(f"Jurusan {j}")
+                data = df[df["jurusan"] == j].sort_values(by="nama")
+                st.dataframe(data)
+
+    # ================= DEV =================
     elif st.session_state.role == "dev":
+        st.warning("Developer Mode")
         st.dataframe(pd.read_sql("SELECT * FROM kas", conn))
         st.dataframe(pd.read_sql("SELECT * FROM admin", conn))
 
+    # LOGOUT
     if st.button("Logout"):
         st.session_state.clear()
         st.rerun()
