@@ -25,11 +25,12 @@ def clean_nominal(n):
     return int(n) if n.isdigit() else 0
 
 # ======================
-# PDF
+# PDF GENERATOR
 # ======================
 def generate_pdf(df):
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer)
+
     data = [df.columns.tolist()] + df.values.tolist()
 
     table = Table(data)
@@ -206,6 +207,13 @@ else:
             st.metric("Total Kas", format_rupiah(df["nominal"].sum()))
             st.dataframe(df)
 
+            # ================= PDF USER TABLE =================
+            st.download_button(
+                "⬇️ Download PDF Tabel",
+                generate_pdf(df),
+                "user_kas.pdf"
+            )
+
         if st.button("Logout"):
             st.session_state.clear()
             st.rerun()
@@ -221,6 +229,13 @@ else:
         st.subheader("👤 Data Akun Admin")
         st.dataframe(df_admin)
 
+        # ================= PDF ADMIN TABLE =================
+        st.download_button(
+            "⬇️ Download PDF Akun",
+            generate_pdf(df_admin),
+            "akun_admin.pdf"
+        )
+
         if not df_admin.empty:
             id_del = st.number_input("Hapus ID Akun", step=1)
             if st.button("Hapus Akun"):
@@ -230,6 +245,13 @@ else:
 
         st.subheader("📊 Semua Data Kas")
         st.dataframe(df_kas)
+
+        # ================= PDF KAS TABLE =================
+        st.download_button(
+            "⬇️ Download PDF Kas",
+            generate_pdf(df_kas),
+            "kas_all.pdf"
+        )
 
         if st.button("Logout"):
             st.session_state.clear()
@@ -287,33 +309,17 @@ else:
                 st.metric("Total Kas", format_rupiah(df["nominal"].sum()))
                 st.bar_chart(df["status"].value_counts())
 
-                # ================= TABEL =================
                 st.subheader("📋 Data Kas")
                 df_tampil = df.copy()
                 df_tampil["tanggal"] = pd.to_datetime(df_tampil["tanggal"]).dt.strftime("%Y-%m-%d")
                 st.dataframe(df_tampil)
 
-                # ================= CEK STATISTIK SISWA (RESTORED) =================
-                st.subheader("📊 Cek Performa Siswa")
-
-                siswa = st.selectbox("Pilih Siswa", sorted(df["nama"].unique()))
-
-                if st.button("Cek Performa"):
-                    data = df[df["nama"] == siswa]
-                    hasil = data["status"].value_counts()
-
-                    st.bar_chart(hasil)
-
-                    total = len(data)
-                    telat = len(data[data["status"] == "Telat"])
-                    persen = (telat / total) * 100 if total > 0 else 0
-
-                    if persen < 20:
-                        st.success("Performa sangat baik 👍")
-                    elif persen < 50:
-                        st.warning("Perlu peningkatan ⚠️")
-                    else:
-                        st.error("Sering telat ❌")
+                # ================= PDF ADMIN TABLE =================
+                st.download_button(
+                    "⬇️ Download PDF Kas",
+                    generate_pdf(df_tampil),
+                    "kas_admin.pdf"
+                )
 
             # ================= HAPUS =================
             st.subheader("🗑️ Hapus Data")
@@ -363,14 +369,14 @@ else:
                 )
                 conn.commit()
 
-            df_masuk = pd.read_sql(
-                "SELECT nominal FROM kas WHERE kelas=? AND jurusan=?",
+            df_keluar = pd.read_sql(
+                "SELECT * FROM pengeluaran WHERE kelas=? AND jurusan=?",
                 conn,
                 params=(st.session_state.kelas, st.session_state.jurusan)
             )
 
-            df_keluar = pd.read_sql(
-                "SELECT * FROM pengeluaran WHERE kelas=? AND jurusan=?",
+            df_masuk = pd.read_sql(
+                "SELECT nominal FROM kas WHERE kelas=? AND jurusan=?",
                 conn,
                 params=(st.session_state.kelas, st.session_state.jurusan)
             )
@@ -390,8 +396,12 @@ else:
                 df_keluar["tanggal"] = pd.to_datetime(df_keluar["tanggal"]).dt.strftime("%Y-%m-%d")
                 st.dataframe(df_keluar)
 
-                pdf = generate_pdf(df_keluar)
-                st.download_button("Download PDF", pdf, "pengeluaran.pdf")
+                # ================= PDF PENGELUARAN =================
+                st.download_button(
+                    "⬇️ Download PDF Pengeluaran",
+                    generate_pdf(df_keluar),
+                    "pengeluaran.pdf"
+                )
 
         if st.button("Logout"):
             st.session_state.clear()
