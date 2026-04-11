@@ -3,6 +3,7 @@ import pandas as pd
 import datetime
 import sqlite3
 import random
+import hashlib
 
 # ======================
 # CONFIG
@@ -10,13 +11,18 @@ import random
 st.set_page_config(layout="wide")
 
 # ======================
-# DATABASE INIT (ANTI ERROR TOTAL)
+# HASH PASSWORD
+# ======================
+def hash_password(password):
+    return hashlib.sha256(password.encode()).hexdigest()
+
+# ======================
+# DATABASE INIT
 # ======================
 def init_db():
     conn = sqlite3.connect("kas.db", check_same_thread=False)
     cursor = conn.cursor()
 
-    # tabel utama
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS kas (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -41,22 +47,19 @@ def init_db():
 
     conn.commit()
 
-    # ===== FIX KOLOM (PENTING BANGET)
     def ensure_column(table, column):
         cursor.execute(f"PRAGMA table_info({table})")
-        columns = [col[1] for col in cursor.fetchall()]
-
-        if column not in columns:
+        cols = [c[1] for c in cursor.fetchall()]
+        if column not in cols:
             try:
                 cursor.execute(f"ALTER TABLE {table} ADD COLUMN {column} TEXT")
                 conn.commit()
             except:
                 pass
 
-    ensure_column("kas", "kelas")
-    ensure_column("kas", "jurusan")
-    ensure_column("admin", "kelas")
-    ensure_column("admin", "jurusan")
+    for col in ["kelas", "jurusan"]:
+        ensure_column("kas", col)
+        ensure_column("admin", col)
 
     return conn, cursor
 
@@ -95,13 +98,18 @@ if not st.session_state.login:
             username = st.text_input("Username")
             password = st.text_input("Password", type="password")
             kelas = st.selectbox("Kelas", ["10", "11", "12"])
-            jurusan = st.text_input("Jurusan (contoh: TKJ 1)")
+            jurusan = st.text_input("Jurusan")
 
             if st.button("Login"):
+                username = username.strip()
+                jurusan = jurusan.strip().upper()
+
+                hashed = hash_password(password)
+
                 cursor.execute(
                     """SELECT * FROM admin 
                     WHERE username=? AND password=? AND kelas=? AND jurusan=?""",
-                    (username, password, kelas, jurusan)
+                    (username, hashed, kelas, jurusan)
                 )
                 data = cursor.fetchone()
 
@@ -117,32 +125,34 @@ if not st.session_state.login:
 
         # ===== REGISTER =====
         elif menu == "Register":
-            user = st.text_input("Username Baru")
-            pw = st.text_input("Password Baru", type="password")
+            user = st.text_input("Username")
+            pw = st.text_input("Password", type="password")
             email = st.text_input("Email")
-            kelas = st.selectbox("Kelas", ["A", "B", "C"])
+            kelas = st.selectbox("Kelas", ["10", "11", "12"])
             jurusan = st.text_input("Jurusan")
 
             if st.button("Daftar"):
+                user = user.strip()
+                jurusan = jurusan.strip().upper()
 
-                # CEK DUPLIKAT
-                cursor.execute(
-                    "SELECT * FROM admin WHERE kelas=? AND jurusan=?",
-                    (kelas, jurusan)
-                )
-                existing = cursor.fetchone()
-
-                if existing:
-                    st.error("Admin untuk kelas & jurusan ini sudah ada!")
+                if not user or not pw or not email:
+                    st.warning("Semua field wajib diisi!")
                 else:
                     cursor.execute(
-                        """INSERT INTO admin 
-                        (username, password, email, kelas, jurusan)
-                        VALUES (?, ?, ?, ?, ?)""",
-                        (user, pw, email, kelas, jurusan)
+                        "SELECT * FROM admin WHERE kelas=? AND jurusan=?",
+                        (kelas, jurusan)
                     )
-                    conn.commit()
-                    st.success("Akun berhasil dibuat!")
+                    if cursor.fetchone():
+                        st.error("Admin kelas & jurusan sudah ada!")
+                    else:
+                        cursor.execute(
+                            """INSERT INTO admin 
+                            (username, password, email, kelas, jurusan)
+                            VALUES (?, ?, ?, ?, ?)""",
+                            (user, hash_password(pw), email, kelas, jurusan)
+                        )
+                        conn.commit()
+                        st.success("Akun berhasil dibuat!")
 
         # ===== LUPA PASSWORD =====
         elif menu == "Lupa Password":
@@ -160,7 +170,7 @@ if not st.session_state.login:
                 if otp_input == st.session_state.otp:
                     cursor.execute(
                         "UPDATE admin SET password=? WHERE email=?",
-                        (new_pw, email)
+                        (hash_password(new_pw), email)
                     )
                     conn.commit()
                     st.success("Password berhasil diubah")
@@ -204,7 +214,7 @@ else:
                 st.success("Data tersimpan")
                 st.rerun()
 
-    # ===== AMBIL DATA =====
+    # ===== DATA =====
     if st.session_state.role == "admin":
         df = pd.read_sql(
             "SELECT * FROM kas WHERE kelas=? AND jurusan=?",
@@ -216,6 +226,15 @@ else:
 
     st.dataframe(df, use_container_width=True)
 
+    # ===== PANEL ADMIN (LIHAT AKUN)
+    if st.session_state.role == "admin":
+        st.subheader("👤 Data Admin")
+        df_admin = pd.read_sql(
+            "SELECT username, email, kelas, jurusan FROM admin",
+            conn
+        )
+        st.dataframe(df_admin)
+
     # ===== LOGOUT =====
     if st.button("Logout"):
         st.session_state.login = False
@@ -223,8 +242,8 @@ else:
         st.session_state.kelas = None
         st.session_state.jurusan = None
         st.rerun()
-        
-cursor.execute("DELETE FROM kas WHERE kelas IS NULL")
-conn.commit()
 
+# ======================
+# FOOTER
+# ======================
 st.write("© kaskita 2026")
