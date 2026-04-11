@@ -4,6 +4,7 @@ import datetime
 import sqlite3
 import hashlib
 import re
+import random
 
 # ======================
 # CONFIG
@@ -78,7 +79,8 @@ defaults = {
     "role": None,
     "kelas": None,
     "jurusan": None,
-    "page": "role"
+    "page": "role",
+    "otp": None
 }
 
 for k, v in defaults.items():
@@ -112,7 +114,7 @@ if not st.session_state.login and st.session_state.page == "role":
             st.session_state.page = "login"
 
 # ======================
-# LOGIN / REGISTER ADMIN
+# LOGIN / REGISTER / LUPA PASSWORD
 # ======================
 elif not st.session_state.login:
 
@@ -122,10 +124,9 @@ elif not st.session_state.login:
 
     st.title("Login")
 
-    # ================= ADMIN =================
     if st.session_state.role == "admin":
 
-        menu = st.radio("Menu", ["Login", "Register"])
+        menu = st.radio("Menu", ["Login", "Register", "Lupa Password"])
 
         # ===== LOGIN =====
         if menu == "Login":
@@ -167,7 +168,6 @@ elif not st.session_state.login:
                 if not user or not pw or not email or not jurusan:
                     st.warning("Semua field wajib diisi")
                 else:
-                    # CEK DUPLIKAT KELAS + JURUSAN
                     cursor.execute(
                         "SELECT * FROM admin WHERE kelas=? AND jurusan=?",
                         (kelas, jurusan.upper())
@@ -189,6 +189,36 @@ elif not st.session_state.login:
                         conn.commit()
                         st.success("Akun admin berhasil dibuat!")
 
+        # ===== LUPA PASSWORD =====
+        elif menu == "Lupa Password":
+
+            st.subheader("Reset Password")
+
+            email = st.text_input("Masukkan Email")
+
+            if st.button("Kirim OTP"):
+                cursor.execute("SELECT * FROM admin WHERE email=?", (email,))
+                if cursor.fetchone():
+                    otp = str(random.randint(1000, 9999))
+                    st.session_state.otp = otp
+                    st.success(f"OTP (simulasi): {otp}")
+                else:
+                    st.error("Email tidak ditemukan")
+
+            otp_input = st.text_input("Masukkan OTP")
+            new_pw = st.text_input("Password Baru", type="password")
+
+            if st.button("Reset Password"):
+                if otp_input == st.session_state.otp:
+                    cursor.execute(
+                        "UPDATE admin SET password=? WHERE email=?",
+                        (hash_password(new_pw), email)
+                    )
+                    conn.commit()
+                    st.success("Password berhasil diubah")
+                else:
+                    st.error("OTP salah")
+
     # ================= DEV =================
     elif st.session_state.role == "dev":
 
@@ -209,12 +239,10 @@ else:
 
     st.title("📊 Dashboard KAS")
 
-    # ================= ADMIN =================
     if st.session_state.role == "admin":
 
         st.success(f"Kelas {st.session_state.kelas} - {st.session_state.jurusan}")
 
-        # INPUT
         st.subheader("➕ Input Pembayaran")
 
         nama = st.text_input("Nama Siswa")
@@ -238,87 +266,25 @@ else:
                 conn.commit()
                 st.success("Data tersimpan")
                 st.rerun()
-            else:
-                st.warning("Nama tidak boleh kosong")
 
-        # DATA
         df = pd.read_sql(
             "SELECT * FROM kas WHERE kelas=? AND jurusan=?",
             conn,
             params=(st.session_state.kelas, st.session_state.jurusan)
         )
 
-        st.subheader("📋 Data Siswa")
         st.dataframe(df, use_container_width=True)
 
-        # TOTAL KAS
         total_kas = df["nominal"].sum() if not df.empty else 0
-        st.subheader("💰 Total Kas")
         st.success(format_rupiah(total_kas))
 
-        # HAPUS DATA
-        st.subheader("🗑️ Hapus Data")
-        konfirmasi = st.checkbox("Saya yakin ingin menghapus data")
-
-        col1, col2, col3 = st.columns(3)
-
-        with col1:
-            id_hapus = st.number_input("Hapus berdasarkan ID", step=1)
-            if st.button("Hapus ID") and konfirmasi:
-                cursor.execute("DELETE FROM kas WHERE id=?", (id_hapus,))
-                conn.commit()
-                st.rerun()
-
-        with col2:
-            if not df.empty:
-                siswa = st.selectbox("Pilih siswa", df["nama"].unique())
-                if st.button("Hapus Siswa") and konfirmasi:
-                    cursor.execute(
-                        "DELETE FROM kas WHERE nama=? AND kelas=? AND jurusan=?",
-                        (siswa,
-                         st.session_state.kelas,
-                         st.session_state.jurusan)
-                    )
-                    conn.commit()
-                    st.rerun()
-
-        with col3:
-            if st.button("Hapus Semua Data") and konfirmasi:
-                cursor.execute(
-                    "DELETE FROM kas WHERE kelas=? AND jurusan=?",
-                    (st.session_state.kelas,
-                     st.session_state.jurusan)
-                )
-                conn.commit()
-                st.rerun()
-
-        # ANALISIS
-        st.subheader("📈 Analisis")
-        if not df.empty:
-            st.bar_chart(df["status"].value_counts())
-
-        # CEK PERFORMA
-        st.subheader("📊 Cek Performa Siswa")
-        if not df.empty:
-            siswa = st.selectbox("Pilih Siswa", df["nama"].unique())
-
-            if st.button("Cek Performa"):
-                data_siswa = df[df["nama"] == siswa]
-                hasil = data_siswa["status"].value_counts()
-                st.bar_chart(hasil)
-
-    # ================= USER =================
     elif st.session_state.role == "user":
-        st.info("Mode User")
         st.dataframe(pd.read_sql("SELECT * FROM kas", conn))
 
-    # ================= DEV =================
     elif st.session_state.role == "dev":
-        st.warning("Developer Mode")
         st.dataframe(pd.read_sql("SELECT * FROM kas", conn))
         st.dataframe(pd.read_sql("SELECT * FROM admin", conn))
 
-    # LOGOUT
     if st.button("Logout"):
         st.session_state.clear()
         st.rerun()
