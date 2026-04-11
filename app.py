@@ -103,4 +103,4 @@ else:
 # ======================
 # FOOTER
 # ======================
-st.write("© Project Uang Kas")
+st.write("©KasKita 2026")
