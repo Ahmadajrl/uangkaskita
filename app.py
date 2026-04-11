@@ -181,15 +181,6 @@ elif not st.session_state.login:
                     st.session_state.jurusan = jurusan.upper()
                     st.rerun()
 
-    elif st.session_state.role == "dev":
-        user = st.text_input("Username")
-        pw = st.text_input("Password", type="password")
-
-        if st.button("Login Developer"):
-            if user == DEV_USER and pw == DEV_PASS:
-                st.session_state.login = True
-                st.rerun()
-
 # ======================
 # MAIN APP
 # ======================
@@ -213,60 +204,8 @@ else:
                 st.session_state.menu = "pengeluaran"
                 st.rerun()
 
-        # ================= DASHBOARD =================
-        if st.session_state.menu == "dashboard":
-
-            st.subheader("➕ Input Pembayaran")
-
-            nama = st.text_input("Nama Siswa")
-            tanggal = st.date_input("Tanggal")
-            status = st.selectbox("Status", ["Tepat Waktu", "Telat"])
-            keterangan = st.text_input("Keterangan")
-            nominal = st.text_input("Nominal (bebas)")
-
-            if st.button("Simpan"):
-                nilai = clean_nominal(nominal)
-
-                cursor.execute(
-                    "INSERT INTO kas VALUES (NULL,?,?,?,?,?,?,?)",
-                    (nama, tanggal.strftime("%Y-%m-%d"), status,
-                     st.session_state.kelas,
-                     st.session_state.jurusan,
-                     keterangan,
-                     nilai)
-                )
-                conn.commit()
-                st.success("Data tersimpan")
-                st.rerun()
-
-            df = pd.read_sql(
-                "SELECT * FROM kas WHERE kelas=? AND jurusan=?",
-                conn,
-                params=(st.session_state.kelas, st.session_state.jurusan)
-            )
-
-            if not df.empty:
-                df["tanggal"] = pd.to_datetime(df["tanggal"]).dt.strftime("%Y-%m-%d")
-                df["bulan"] = pd.to_datetime(df["tanggal"]).dt.strftime("%B %Y")
-
-                total = df["nominal"].sum()
-                st.metric("💰 Total Kas", format_rupiah(total))
-
-                # DOWNLOAD PDF
-                pdf = generate_pdf(df)
-                st.download_button("⬇️ Download PDF", pdf, "data_kas.pdf")
-
-            if not df.empty:
-                for bulan in sorted(df["bulan"].unique()):
-                    st.subheader(f"📅 {bulan}")
-                    df_bulan = df[df["bulan"] == bulan]
-                    st.dataframe(df_bulan)
-
-                    pdf = generate_pdf(df_bulan)
-                    st.download_button(f"⬇️ Download PDF {bulan}", pdf, f"kas_{bulan}.pdf")
-
         # ================= PENGELUARAN =================
-        elif st.session_state.menu == "pengeluaran":
+        if st.session_state.menu == "pengeluaran":
 
             st.subheader("💸 Input Pengeluaran")
 
@@ -291,12 +230,29 @@ else:
                 st.success("Pengeluaran berhasil disimpan")
                 st.rerun()
 
+            # ================= HITUNG SALDO =================
+            df_masuk = pd.read_sql(
+                "SELECT * FROM kas WHERE kelas=? AND jurusan=?",
+                conn,
+                params=(st.session_state.kelas, st.session_state.jurusan)
+            )
+
             df_keluar = pd.read_sql(
                 "SELECT * FROM pengeluaran WHERE kelas=? AND jurusan=?",
                 conn,
                 params=(st.session_state.kelas, st.session_state.jurusan)
             )
 
+            total_masuk = df_masuk["nominal"].sum() if not df_masuk.empty else 0
+            total_keluar = df_keluar["nominal"].sum() if not df_keluar.empty else 0
+            saldo = total_masuk - total_keluar
+
+            col1, col2, col3 = st.columns(3)
+            col1.metric("💰 Total Kas", format_rupiah(total_masuk))
+            col2.metric("💸 Total Pengeluaran", format_rupiah(total_keluar))
+            col3.metric("🧮 Saldo Sekarang", format_rupiah(saldo))
+
+            # ================= RIWAYAT =================
             st.subheader("📋 Riwayat Pengeluaran")
 
             if not df_keluar.empty:
@@ -305,6 +261,8 @@ else:
 
                 pdf = generate_pdf(df_keluar)
                 st.download_button("⬇️ Download PDF Pengeluaran", pdf, "pengeluaran.pdf")
+            else:
+                st.info("Belum ada pengeluaran")
 
     if st.button("Logout"):
         st.session_state.clear()
