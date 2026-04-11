@@ -191,7 +191,57 @@ elif not st.session_state.login:
 else:
 
     st.title("📊 Dashboard KAS")
+    # ================= USER =================
+if st.session_state.role == "user":
 
+    st.title("📊 Dashboard User")
+
+    df = pd.read_sql(
+        "SELECT * FROM kas WHERE kelas=? AND jurusan=?",
+        conn,
+        params=(st.session_state.kelas, st.session_state.jurusan)
+    )
+
+    if df.empty:
+        st.info("Belum ada data kas")
+    else:
+        df["tanggal"] = pd.to_datetime(df["tanggal"])
+        df["bulan"] = df["tanggal"].dt.strftime("%B %Y")
+        df["tanggal"] = df["tanggal"].dt.strftime("%Y-%m-%d")
+
+        # ================= FILTER =================
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            kelas_filter = st.selectbox("Filter Kelas", sorted(df["kelas"].unique()))
+
+        with col2:
+            jurusan_filter = st.selectbox("Filter Jurusan", sorted(df["jurusan"].unique()))
+
+        with col3:
+            bulan_filter = st.selectbox("Filter Bulan", sorted(df["bulan"].unique()))
+
+        df_filtered = df[
+            (df["kelas"] == kelas_filter) &
+            (df["jurusan"] == jurusan_filter) &
+            (df["bulan"] == bulan_filter)
+        ]
+
+        # ================= TOTAL =================
+        st.metric("💰 Total Kas", format_rupiah(df_filtered["nominal"].sum()))
+
+        # ================= TABEL =================
+        st.subheader("📋 Data Pembayaran Kas")
+        st.dataframe(df_filtered)
+
+        # ================= STATISTIK =================
+        st.subheader("📈 Statistik")
+        if not df_filtered.empty:
+            st.bar_chart(df_filtered["status"].value_counts())
+
+    if st.button("Logout"):
+        st.session_state.clear()
+        st.rerun()
     if st.session_state.role == "admin":
 
         st.success(f"Kelas {st.session_state.kelas} - {st.session_state.jurusan}")
