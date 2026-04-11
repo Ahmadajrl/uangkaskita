@@ -223,5 +223,8 @@ else:
         st.session_state.kelas = None
         st.session_state.jurusan = None
         st.rerun()
+        
+cursor.execute("DELETE FROM kas WHERE kelas IS NULL")
+conn.commit()
 
 st.write("© kaskita 2026")
