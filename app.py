@@ -197,16 +197,6 @@ else:
         st.success(f"Kelas {st.session_state.kelas} - {st.session_state.jurusan}")
 
         colA, colB = st.columns(2)
-
-        if not df_filter.empty:
-            df_filter["tanggal"] = df_filter["tanggal"].dt.strftime("%Y-%m-%d")
-            st.dataframe(df_filter)
-        else:
-            st.warning("Data tidak ditemukan")
-
-    else:
-        st.info("Belum ada data kas")
-
         with colA:
             if st.button("📊 Dashboard"):
                 st.session_state.menu = "dashboard"
