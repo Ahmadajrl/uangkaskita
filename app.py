@@ -116,6 +116,8 @@ else:
 
                 pdf = generate_pdf(df_keluar)
                 st.download_button("⬇️ Download PDF Pengeluaran", pdf, "pengeluaran.pdf")
+            else:
+                st.info("Belum ada pengeluaran")
 
     # ================= USER =================
     elif st.session_state.role == "user":
@@ -149,7 +151,6 @@ else:
 
                 pdf = generate_pdf(df_filter)
                 st.download_button("⬇️ Download PDF", pdf, "data_kas_user.pdf")
-
             else:
                 st.warning("Data tidak ditemukan")
 
@@ -158,6 +159,8 @@ else:
 
     # ================= DEV =================
     elif st.session_state.role == "dev":
+
+        st.subheader("🛠️ Developer Mode")
         st.dataframe(pd.read_sql("SELECT * FROM kas", conn))
         st.dataframe(pd.read_sql("SELECT * FROM admin", conn))
 
