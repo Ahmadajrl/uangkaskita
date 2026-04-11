@@ -118,7 +118,7 @@ if not st.session_state.login and st.session_state.page == "role":
 # ======================
 elif not st.session_state.login:
 
-    if st.button("⬅️ Kembali"):
+    if st.button("Kembali"):
         st.session_state.page = "role"
         st.rerun()
 
@@ -237,13 +237,13 @@ elif not st.session_state.login:
 # ======================
 else:
 
-    st.title("📊 Dashboard KAS")
+    st.title("Dashboard KAS")
 
     if st.session_state.role == "admin":
 
         st.success(f"Kelas {st.session_state.kelas} - {st.session_state.jurusan}")
 
-        st.subheader("➕ Input Pembayaran")
+        st.subheader("Input Pembayaran")
 
         nama = st.text_input("Nama Siswa")
         tanggal = st.date_input("Tanggal", datetime.date.today())
