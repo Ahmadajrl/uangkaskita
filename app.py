@@ -142,7 +142,13 @@ if not st.session_state.login and st.session_state.page == "role":
         if st.button("Developer"):
             st.session_state.role = "dev"
             st.session_state.page = "login"
+# ======================
+# LOGO
+# ======================
+col_logo1, col_logo2, col_logo3 = st.columns([1,2,1])
 
+with col_logo2:
+    st.image("logo.png", use_container_width=True)
 # ======================
 # LOGIN
 # ======================
