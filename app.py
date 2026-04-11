@@ -27,12 +27,12 @@ conn.commit()
 # ======================
 # HEADER
 # ======================
-st.title("📊 Aplikasi Uang Kas Siswa")
+st.title("KAS KITA")
 
 # ======================
 # INPUT
 # ======================
-st.subheader("➕ Input Pembayaran")
+st.subheader("Input Pembayaran")
 
 nama = st.text_input("Nama Siswa")
 tanggal = st.date_input("Tanggal Bayar", datetime.date.today())
@@ -57,13 +57,13 @@ df = pd.read_sql("SELECT * FROM kas", conn)
 # ======================
 # TABEL
 # ======================
-st.subheader("📋 Data Pembayaran")
+st.subheader("Data Pembayaran")
 st.dataframe(df, use_container_width=True)
 
 # ======================
 # ANALISIS GLOBAL
 # ======================
-st.subheader("📈 Analisis Keseluruhan")
+st.subheader("Analisis Keseluruhan")
 
 if not df.empty:
     global_data = df["status"].value_counts()
@@ -74,7 +74,7 @@ else:
 # ======================
 # STATISTIK PER SISWA
 # ======================
-st.subheader("📊 Statistik Keterlambatan Siswa")
+st.subheader("Statistik Keterlambatan Siswa")
 
 if not df.empty:
     nama_list = df["nama"].unique()
