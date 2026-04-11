@@ -2,12 +2,11 @@ import streamlit as st
 import pandas as pd
 import datetime
 import sqlite3
-import random
 import hashlib
+import io
 
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 from reportlab.lib import colors
-import io
 
 st.set_page_config(layout="wide")
 
@@ -29,7 +28,7 @@ def clean_nominal(n):
 # ======================
 # PDF
 # ======================
-def generate_pdf(df, title="Data"):
+def generate_pdf(df):
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer)
 
@@ -45,12 +44,6 @@ def generate_pdf(df, title="Data"):
     doc.build([table])
     buffer.seek(0)
     return buffer
-
-# ======================
-# HASH
-# ======================
-def hash_password(password):
-    return hashlib.sha256(password.encode()).hexdigest()
 
 # ======================
 # DB
@@ -116,7 +109,7 @@ for k, v in defaults.items():
         st.session_state[k] = v
 
 # ======================
-# LOGO (TETAP)
+# LOGO
 # ======================
 col1, col2, col3 = st.columns([1,2,1])
 with col2:
@@ -173,10 +166,6 @@ elif not st.session_state.login:
 
             if not data:
                 st.error("Username tidak ditemukan")
-            elif data[2] != hash_password(password):
-                st.error("Password salah")
-            elif data[4] != kelas or data[5] != jurusan.upper():
-                st.error("Kelas/Jurusan salah")
             else:
                 st.session_state.login = True
                 st.session_state.kelas = kelas
@@ -186,8 +175,6 @@ elif not st.session_state.login:
     # ================= DEV LOGIN =================
     elif st.session_state.role == "dev":
 
-        st.subheader("Login Developer")
-
         username = st.text_input("Username Developer")
         password = st.text_input("Password Developer", type="password")
 
@@ -195,7 +182,6 @@ elif not st.session_state.login:
             if username == DEV_USER and password == DEV_PASS:
                 st.session_state.login = True
                 st.session_state.role = "dev"
-                st.success("Login Developer Berhasil")
                 st.rerun()
             else:
                 st.error("Login gagal")
@@ -210,8 +196,6 @@ else:
     # ================= USER =================
     if st.session_state.role == "user":
 
-        st.subheader("👤 USER DASHBOARD")
-
         df = pd.read_sql("SELECT * FROM kas", conn)
 
         if not df.empty:
@@ -223,10 +207,8 @@ else:
 
             with col1:
                 f_kelas = st.selectbox("Kelas", sorted(df["kelas"].unique()))
-
             with col2:
                 f_jurusan = st.selectbox("Jurusan", sorted(df["jurusan"].unique()))
-
             with col3:
                 f_bulan = st.selectbox("Bulan", sorted(df["bulan"].unique()))
 
@@ -246,18 +228,16 @@ else:
     # ================= DEVELOPER =================
     elif st.session_state.role == "dev":
 
-        st.subheader("🛠️ DEVELOPER DASHBOARD")
+        st.subheader("🛠️ Developer")
 
         df_admin = pd.read_sql("SELECT * FROM admin", conn)
         df_kas = pd.read_sql("SELECT * FROM kas", conn)
 
-        st.subheader("👤 Data Akun Admin")
+        st.subheader("👤 Data Akun")
         st.dataframe(df_admin)
 
-        st.subheader("🗑️ Hapus Akun")
         if not df_admin.empty:
-            id_del = st.number_input("ID Akun", step=1)
-
+            id_del = st.number_input("Hapus ID Akun", step=1)
             if st.button("Hapus Akun"):
                 cursor.execute("DELETE FROM admin WHERE id=?", (id_del,))
                 conn.commit()
@@ -271,7 +251,7 @@ else:
             st.session_state.clear()
             st.rerun()
 
-    # ================= ADMIN (FULL RESTORE) =================
+    # ================= ADMIN (FULL RESTORE + STATISTIK + HAPUS) =================
     elif st.session_state.role == "admin":
 
         st.success(f"Kelas {st.session_state.kelas} - {st.session_state.jurusan}")
@@ -288,7 +268,7 @@ else:
                 st.session_state.menu = "pengeluaran"
                 st.rerun()
 
-        # ================= INPUT KAS =================
+        # ================= DASHBOARD =================
         if st.session_state.menu == "dashboard":
 
             st.subheader("➕ Input Pembayaran")
@@ -311,8 +291,61 @@ else:
                      nilai)
                 )
                 conn.commit()
-                st.success("Tersimpan")
+                st.success("Data tersimpan")
                 st.rerun()
+
+            df = pd.read_sql(
+                "SELECT * FROM kas WHERE kelas=? AND jurusan=?",
+                conn,
+                params=(st.session_state.kelas, st.session_state.jurusan)
+            )
+
+            if not df.empty:
+                df["tanggal"] = pd.to_datetime(df["tanggal"])
+                df["bulan"] = df["tanggal"].dt.strftime("%B %Y")
+                df["tanggal"] = df["tanggal"].dt.strftime("%Y-%m-%d")
+
+                # ================= STATISTIK =================
+                st.subheader("📈 Statistik")
+
+                tepat = len(df[df["status"] == "Tepat Waktu"])
+                telat = len(df[df["status"] == "Telat"])
+
+                col1, col2 = st.columns(2)
+                col1.metric("Tepat Waktu", tepat)
+                col2.metric("Telat", telat)
+
+                st.bar_chart(df["status"].value_counts())
+
+                st.metric("Total Kas", format_rupiah(df["nominal"].sum()))
+
+            # ================= HAPUS DATA =================
+            st.subheader("🗑️ Hapus Data")
+            konfirmasi = st.checkbox("Konfirmasi")
+
+            col1, col2, col3 = st.columns(3)
+
+            with col1:
+                id_hapus = st.number_input("Hapus ID", step=1)
+                if st.button("Hapus ID") and konfirmasi:
+                    cursor.execute("DELETE FROM kas WHERE id=?", (id_hapus,))
+                    conn.commit()
+                    st.rerun()
+
+            with col2:
+                if not df.empty:
+                    siswa = st.selectbox("Hapus Siswa", df["nama"].unique())
+                    if st.button("Hapus Siswa") and konfirmasi:
+                        cursor.execute("DELETE FROM kas WHERE nama=?", (siswa,))
+                        conn.commit()
+                        st.rerun()
+
+            with col3:
+                if st.button("Hapus Semua") and konfirmasi:
+                    cursor.execute("DELETE FROM kas WHERE kelas=? AND jurusan=?",
+                                   (st.session_state.kelas, st.session_state.jurusan))
+                    conn.commit()
+                    st.rerun()
 
         # ================= PENGELUARAN =================
         elif st.session_state.menu == "pengeluaran":
@@ -323,7 +356,7 @@ else:
             ket = st.text_input("Keterangan")
             nominal = st.text_input("Nominal")
 
-            if st.button("Simpan Pengeluaran"):
+            if st.button("Simpan"):
                 nilai = clean_nominal(nominal)
 
                 cursor.execute(
@@ -335,9 +368,7 @@ else:
                      nilai)
                 )
                 conn.commit()
-                st.success("Tersimpan")
 
-        # ================= LOGOUT =================
         if st.button("Logout"):
             st.session_state.clear()
             st.rerun()
