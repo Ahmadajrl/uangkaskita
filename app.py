@@ -34,7 +34,8 @@ def init_db():
         status TEXT,
         kelas TEXT,
         jurusan TEXT,
-        keterangan TEXT
+        keterangan TEXT,
+        nominal REAL
     )
     ''')
 
@@ -49,16 +50,18 @@ def init_db():
     )
     ''')
 
+    # ===== FIX KOLOM TAMBAHAN
     def ensure_column(table, column):
         cursor.execute(f"PRAGMA table_info({table})")
         cols = [c[1] for c in cursor.fetchall()]
         if column not in cols:
             try:
-                cursor.execute(f"ALTER TABLE {table} ADD COLUMN {column} TEXT")
+                cursor.execute(f"ALTER TABLE {table} ADD COLUMN {column} REAL")
             except:
                 pass
 
     ensure_column("kas", "keterangan")
+    ensure_column("kas", "nominal")
 
     conn.commit()
     return conn, cursor
@@ -170,15 +173,17 @@ else:
         tanggal = st.date_input("Tanggal", datetime.date.today())
         status = st.selectbox("Status", ["Tepat Waktu", "Telat"])
         keterangan = st.text_input("Keterangan (contoh: Lunas)")
+        nominal = st.number_input("Masukan nominal kas", min_value=0.0, step=1000.0)
 
         if st.button("Simpan"):
             if nama:
                 cursor.execute(
-                    "INSERT INTO kas VALUES (NULL,?,?,?,?,?,?)",
+                    "INSERT INTO kas VALUES (NULL,?,?,?,?,?,?,?)",
                     (nama, str(tanggal), status,
                      st.session_state.kelas,
                      st.session_state.jurusan,
-                     keterangan)
+                     keterangan,
+                     nominal)
                 )
                 conn.commit()
                 st.success("Data tersimpan")
@@ -195,6 +200,15 @@ else:
 
         st.subheader("📋 Data Siswa")
         st.dataframe(df, use_container_width=True)
+
+        # ================= TOTAL NOMINAL =================
+        st.subheader("💰 Total Kas")
+
+        if not df.empty:
+            total_kas = df["nominal"].fillna(0).sum()
+            st.metric("Total Kas Kelas Ini", f"Rp {total_kas:,.0f}")
+        else:
+            st.info("Belum ada data kas")
 
         # ================= HAPUS DATA =================
         st.subheader("🗑️ Hapus Data")
@@ -236,46 +250,36 @@ else:
                 st.success("Semua data dihapus")
                 st.rerun()
 
-        # ================= ANALISIS GLOBAL =================
-        st.subheader("📈 Analisis Keseluruhan")
+        # ================= ANALISIS =================
+        st.subheader("📈 Analisis")
 
         if not df.empty:
             st.bar_chart(df["status"].value_counts())
         else:
             st.info("Belum ada data")
 
-        # ================= CEK PERFORMA SISWA =================
+        # ================= PERFORMA SISWA =================
         st.subheader("🎯 Cek Performa Siswa")
 
         if not df.empty:
             siswa = st.selectbox("Pilih Siswa", df["nama"].unique())
 
             if st.button("Cek Performa"):
-
                 data_siswa = df[df["nama"] == siswa]
                 hasil = data_siswa["status"].value_counts()
 
-                st.write(f"Performa: **{siswa}**")
                 st.bar_chart(hasil)
 
                 total = len(data_siswa)
                 telat = len(data_siswa[data_siswa["status"] == "Telat"])
                 persen = (telat / total) * 100 if total > 0 else 0
 
-                st.write(f"Total: {total}")
-                st.write(f"Telat: {telat}")
-                st.write(f"Persentase Telat: {persen:.2f}%")
-
-                # AI Insight
                 if persen < 20:
                     st.success("Sangat disiplin 👍")
                 elif persen < 50:
-                    st.warning("Cukup baik, perlu ditingkatkan ⚠️")
+                    st.warning("Cukup baik ⚠️")
                 else:
                     st.error("Sering telat ❌")
-
-        else:
-            st.info("Belum ada data siswa")
 
     # ================= USER =================
     elif st.session_state.role == "user":
