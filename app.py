@@ -11,13 +11,13 @@ import hashlib
 st.set_page_config(layout="wide")
 
 # ======================
-# DEVELOPER LOGIN
+# DEVELOPER LOGIN (FIX)
 # ======================
-DEV_USER = "dev"
-DEV_PASS = "dev123"
+DEV_USER = "developer"
+DEV_PASS = "kaskita"
 
 # ======================
-# HASH
+# HASH PASSWORD
 # ======================
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
@@ -191,12 +191,10 @@ else:
     elif st.session_state.role == "dev":
         st.warning("Developer Mode 🔧")
 
-        # lihat semua data kas
         st.subheader("📊 Semua Data Kas")
         df = pd.read_sql("SELECT * FROM kas", conn)
         st.dataframe(df)
 
-        # lihat semua admin
         st.subheader("👤 Data Admin")
         admin_df = pd.read_sql(
             "SELECT id, username, email, kelas, jurusan FROM admin",
@@ -204,7 +202,6 @@ else:
         )
         st.dataframe(admin_df)
 
-        # hapus admin
         id_hapus = st.number_input("Masukkan ID Admin", step=1)
 
         if st.button("Hapus Admin"):
