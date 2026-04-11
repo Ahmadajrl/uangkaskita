@@ -59,6 +59,18 @@ def init_db():
     )
     ''')
 
+    # TABLE BARU PENGELUARAN
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS pengeluaran (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        tanggal TEXT,
+        kelas TEXT,
+        jurusan TEXT,
+        keterangan TEXT,
+        nominal INTEGER
+    )
+    ''')
+
     conn.commit()
     return conn, cursor
 
@@ -73,7 +85,8 @@ defaults = {
     "kelas": None,
     "jurusan": None,
     "page": "role",
-    "otp": None
+    "otp": None,
+    "menu": "dashboard"
 }
 
 for k, v in defaults.items():
@@ -213,120 +226,182 @@ else:
 
         st.success(f"Kelas {st.session_state.kelas} - {st.session_state.jurusan}")
 
-        # INPUT
-        st.subheader("➕ Input Pembayaran")
+        # MENU NAVIGASI
+        colA, colB = st.columns(2)
 
-        nama = st.text_input("Nama Siswa")
-        tanggal = st.date_input("Tanggal")
-        status = st.selectbox("Status", ["Tepat Waktu", "Telat"])
-        keterangan = st.text_input("Keterangan")
-        nominal = st.text_input("Nominal (bebas)")
-
-        if st.button("Simpan"):
-            nilai = clean_nominal(nominal)
-
-            cursor.execute(
-                "INSERT INTO kas VALUES (NULL,?,?,?,?,?,?,?)",
-                (nama, tanggal.strftime("%Y-%m-%d"), status,
-                 st.session_state.kelas,
-                 st.session_state.jurusan,
-                 keterangan,
-                 nilai)
-            )
-            conn.commit()
-            st.success("Data tersimpan")
-            st.rerun()
-
-        # DATA
-        df = pd.read_sql(
-            "SELECT * FROM kas WHERE kelas=? AND jurusan=?",
-            conn,
-            params=(st.session_state.kelas, st.session_state.jurusan)
-        )
-
-        if not df.empty:
-            df["tanggal"] = pd.to_datetime(df["tanggal"]).dt.strftime("%Y-%m-%d")
-            df["bulan"] = pd.to_datetime(df["tanggal"]).dt.strftime("%B %Y")
-
-            total = df["nominal"].sum()
-            st.metric("💰 Total Kas", format_rupiah(total))
-
-        # ================= STATISTIK =================
-        st.subheader("📈 Statistik Pembayaran")
-
-        if not df.empty:
-            tepat = len(df[df["status"] == "Tepat Waktu"])
-            telat = len(df[df["status"] == "Telat"])
-
-            col1, col2 = st.columns(2)
-            col1.metric("Tepat Waktu", tepat)
-            col2.metric("Telat", telat)
-
-            st.bar_chart(df["status"].value_counts())
-        else:
-            st.info("Belum ada data")
-
-        # ================= PER SISWA =================
-        st.subheader("📊 Cek Performa Siswa")
-
-        if not df.empty:
-            siswa = st.selectbox("Pilih Siswa", sorted(df["nama"].unique()))
-
-            if st.button("Cek Performa"):
-                data_siswa = df[df["nama"] == siswa]
-                hasil = data_siswa["status"].value_counts()
-
-                st.bar_chart(hasil)
-
-                total_s = len(data_siswa)
-                telat_s = len(data_siswa[data_siswa["status"] == "Telat"])
-                persen = (telat_s / total_s) * 100 if total_s > 0 else 0
-
-                if persen < 20:
-                    st.success("Performa sangat baik 👍")
-                elif persen < 50:
-                    st.warning("Perlu peningkatan ⚠️")
-                else:
-                    st.error("Sering telat ❌")
-
-        # ================= TABEL =================
-        if not df.empty:
-            for bulan in sorted(df["bulan"].unique()):
-                st.subheader(f"📅 {bulan}")
-                st.dataframe(df[df["bulan"] == bulan])
-
-        # ================= HAPUS =================
-        st.subheader("🗑️ Hapus Data")
-        konfirmasi = st.checkbox("Saya yakin")
-
-        col1, col2, col3 = st.columns(3)
-
-        with col1:
-            id_hapus = st.number_input("Hapus ID", step=1)
-            if st.button("Hapus ID") and konfirmasi:
-                cursor.execute("DELETE FROM kas WHERE id=?", (id_hapus,))
-                conn.commit()
+        with colA:
+            if st.button("📊 Dashboard"):
+                st.session_state.menu = "dashboard"
                 st.rerun()
 
-        with col2:
+        with colB:
+            if st.button("💸 Input Pengeluaran"):
+                st.session_state.menu = "pengeluaran"
+                st.rerun()
+
+        # ================= DASHBOARD =================
+        if st.session_state.menu == "dashboard":
+
+            st.subheader("➕ Input Pembayaran")
+
+            nama = st.text_input("Nama Siswa")
+            tanggal = st.date_input("Tanggal")
+            status = st.selectbox("Status", ["Tepat Waktu", "Telat"])
+            keterangan = st.text_input("Keterangan")
+            nominal = st.text_input("Nominal (bebas)")
+
+            if st.button("Simpan"):
+                nilai = clean_nominal(nominal)
+
+                cursor.execute(
+                    "INSERT INTO kas VALUES (NULL,?,?,?,?,?,?,?)",
+                    (nama, tanggal.strftime("%Y-%m-%d"), status,
+                     st.session_state.kelas,
+                     st.session_state.jurusan,
+                     keterangan,
+                     nilai)
+                )
+                conn.commit()
+                st.success("Data tersimpan")
+                st.rerun()
+
+            df = pd.read_sql(
+                "SELECT * FROM kas WHERE kelas=? AND jurusan=?",
+                conn,
+                params=(st.session_state.kelas, st.session_state.jurusan)
+            )
+
             if not df.empty:
-                siswa_hapus = st.selectbox("Hapus Siswa", df["nama"].unique())
-                if st.button("Hapus Siswa") and konfirmasi:
+                df["tanggal"] = pd.to_datetime(df["tanggal"]).dt.strftime("%Y-%m-%d")
+                df["bulan"] = pd.to_datetime(df["tanggal"]).dt.strftime("%B %Y")
+
+                total = df["nominal"].sum()
+                st.metric("💰 Total Kas", format_rupiah(total))
+
+            st.subheader("📈 Statistik Pembayaran")
+
+            if not df.empty:
+                tepat = len(df[df["status"] == "Tepat Waktu"])
+                telat = len(df[df["status"] == "Telat"])
+
+                col1, col2 = st.columns(2)
+                col1.metric("Tepat Waktu", tepat)
+                col2.metric("Telat", telat)
+
+                st.bar_chart(df["status"].value_counts())
+            else:
+                st.info("Belum ada data")
+
+            st.subheader("📊 Cek Performa Siswa")
+
+            if not df.empty:
+                siswa = st.selectbox("Pilih Siswa", sorted(df["nama"].unique()))
+
+                if st.button("Cek Performa"):
+                    data_siswa = df[df["nama"] == siswa]
+                    hasil = data_siswa["status"].value_counts()
+
+                    st.bar_chart(hasil)
+
+                    total_s = len(data_siswa)
+                    telat_s = len(data_siswa[data_siswa["status"] == "Telat"])
+                    persen = (telat_s / total_s) * 100 if total_s > 0 else 0
+
+                    if persen < 20:
+                        st.success("Performa sangat baik 👍")
+                    elif persen < 50:
+                        st.warning("Perlu peningkatan ⚠️")
+                    else:
+                        st.error("Sering telat ❌")
+
+            if not df.empty:
+                for bulan in sorted(df["bulan"].unique()):
+                    st.subheader(f"📅 {bulan}")
+                    st.dataframe(df[df["bulan"] == bulan])
+
+            st.subheader("🗑️ Hapus Data")
+            konfirmasi = st.checkbox("Saya yakin")
+
+            col1, col2, col3 = st.columns(3)
+
+            with col1:
+                id_hapus = st.number_input("Hapus ID", step=1)
+                if st.button("Hapus ID") and konfirmasi:
+                    cursor.execute("DELETE FROM kas WHERE id=?", (id_hapus,))
+                    conn.commit()
+                    st.rerun()
+
+            with col2:
+                if not df.empty:
+                    siswa_hapus = st.selectbox("Hapus Siswa", df["nama"].unique())
+                    if st.button("Hapus Siswa") and konfirmasi:
+                        cursor.execute(
+                            "DELETE FROM kas WHERE nama=? AND kelas=? AND jurusan=?",
+                            (siswa_hapus, st.session_state.kelas, st.session_state.jurusan)
+                        )
+                        conn.commit()
+                        st.rerun()
+
+            with col3:
+                if st.button("Hapus Semua") and konfirmasi:
                     cursor.execute(
-                        "DELETE FROM kas WHERE nama=? AND kelas=? AND jurusan=?",
-                        (siswa_hapus, st.session_state.kelas, st.session_state.jurusan)
+                        "DELETE FROM kas WHERE kelas=? AND jurusan=?",
+                        (st.session_state.kelas, st.session_state.jurusan)
                     )
                     conn.commit()
                     st.rerun()
 
-        with col3:
-            if st.button("Hapus Semua") and konfirmasi:
+        # ================= PENGELUARAN =================
+        elif st.session_state.menu == "pengeluaran":
+
+            st.subheader("💸 Input Pengeluaran")
+
+            tgl = st.date_input("Tanggal")
+            keterangan = st.text_input("Keterangan Pengeluaran")
+            nominal = st.text_input("Nominal Pengeluaran")
+
+            if st.button("Simpan Pengeluaran"):
+                nilai = clean_nominal(nominal)
+
                 cursor.execute(
-                    "DELETE FROM kas WHERE kelas=? AND jurusan=?",
-                    (st.session_state.kelas, st.session_state.jurusan)
+                    "INSERT INTO pengeluaran VALUES (NULL,?,?,?,?,?)",
+                    (
+                        tgl.strftime("%Y-%m-%d"),
+                        st.session_state.kelas,
+                        st.session_state.jurusan,
+                        keterangan,
+                        nilai
+                    )
                 )
                 conn.commit()
+                st.success("Pengeluaran berhasil disimpan")
                 st.rerun()
+
+            df_masuk = pd.read_sql(
+                "SELECT * FROM kas WHERE kelas=? AND jurusan=?",
+                conn,
+                params=(st.session_state.kelas, st.session_state.jurusan)
+            )
+
+            df_keluar = pd.read_sql(
+                "SELECT * FROM pengeluaran WHERE kelas=? AND jurusan=?",
+                conn,
+                params=(st.session_state.kelas, st.session_state.jurusan)
+            )
+
+            total_masuk = df_masuk["nominal"].sum() if not df_masuk.empty else 0
+            total_keluar = df_keluar["nominal"].sum() if not df_keluar.empty else 0
+            saldo = total_masuk - total_keluar
+
+            st.metric("🧮 Saldo Sekarang", format_rupiah(saldo))
+
+            st.subheader("📋 Riwayat Pengeluaran")
+
+            if not df_keluar.empty:
+                df_keluar["tanggal"] = pd.to_datetime(df_keluar["tanggal"]).dt.strftime("%Y-%m-%d")
+                st.dataframe(df_keluar)
+            else:
+                st.info("Belum ada pengeluaran")
 
     elif st.session_state.role == "user":
 
