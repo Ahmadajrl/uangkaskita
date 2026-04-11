@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import datetime
-import base64
+import sqlite3
 
 # ======================
 # CONFIG
@@ -9,47 +9,8 @@ import base64
 st.set_page_config(layout="wide")
 
 # ======================
-# CSS
+# DATABASE SQLITE (AMAN CLOUD)
 # ======================
-st.markdown("""
-<style>
-[data-testid="stAppViewContainer"] {
-    background-color: #01023B;
-    color: white;
-}
-label, p {
-    color: white !important;
-}
-.stButton > button {
-    background-color: #09F289;
-    color: black;
-    font-weight: bold;
-    border-radius: 10px;
-}
-</style>
-""", unsafe_allow_html=True)
-
-# ======================
-# LOGO
-# ======================
-def get_base64(file):
-    with open(file, "rb") as f:
-        return base64.b64encode(f.read()).decode()
-
-try:
-    img = get_base64("logo.png")
-    st.markdown(f"""
-    <div style="text-align:center;">
-        <img src="data:image/png;base64,{img}" width="120">
-    </div>
-    """, unsafe_allow_html=True)
-except:
-    pass
-
-# ======================
-# DATABASE (PAKAI SQLITE AGAR AMAN CLOUD)
-# ======================
-import sqlite3
 conn = sqlite3.connect("kas.db", check_same_thread=False)
 cursor = conn.cursor()
 
@@ -89,10 +50,13 @@ if st.button("Simpan"):
         st.warning("Nama tidak boleh kosong!")
 
 # ======================
-# DATA
+# AMBIL DATA
 # ======================
 df = pd.read_sql("SELECT * FROM kas", conn)
 
+# ======================
+# TABEL
+# ======================
 st.subheader("📋 Data Pembayaran")
 st.dataframe(df, use_container_width=True)
 
@@ -102,15 +66,13 @@ st.dataframe(df, use_container_width=True)
 st.subheader("📈 Analisis Keseluruhan")
 
 if not df.empty:
-    chart_data = df["status"].value_counts().reset_index()
-    chart_data.columns = ["Status", "Jumlah"]
-
-    st.bar_chart(chart_data.set_index("Status"))
+    global_data = df["status"].value_counts()
+    st.bar_chart(global_data)
 else:
     st.warning("Belum ada data")
 
 # ======================
-# PIE PER SISWA (TANPA MATPLOTLIB)
+# STATISTIK PER SISWA
 # ======================
 st.subheader("📊 Statistik Keterlambatan Siswa")
 
@@ -122,21 +84,19 @@ if not df.empty:
         data_siswa = df[df["nama"] == nama_pilih]
 
         if not data_siswa.empty:
-            pie_data = data_siswa["status"].value_counts().reset_index()
-            pie_data.columns = ["Status", "Jumlah"]
-
             st.write(f"Statistik untuk: **{nama_pilih}**")
 
-            # PIE CHART BAWAAN STREAMLIT
-            st.plotly_chart({
-                "data": [{
-                    "labels": pie_data["Status"],
-                    "values": pie_data["Jumlah"],
-                    "type": "pie"
-                }]
-            })
+            # HITUNG
+            hasil = data_siswa["status"].value_counts()
+
+            # TAMPILKAN BAR CHART (PALING AMAN)
+            st.bar_chart(hasil)
+
+            # TAMPILKAN ANGKA
+            st.write("Detail:")
+            st.write(hasil)
         else:
-            st.warning("Belum ada data untuk siswa ini")
+            st.warning("Belum ada data siswa ini")
 else:
     st.warning("Belum ada data")
 
