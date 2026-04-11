@@ -20,7 +20,7 @@ def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
 # ======================
-# DB
+# DB INIT (ANTI ERROR KOLOM)
 # ======================
 def init_db():
     conn = sqlite3.connect("kas.db", check_same_thread=False)
@@ -33,7 +33,8 @@ def init_db():
         tanggal TEXT,
         status TEXT,
         kelas TEXT,
-        jurusan TEXT
+        jurusan TEXT,
+        keterangan TEXT
     )
     ''')
 
@@ -47,6 +48,18 @@ def init_db():
         jurusan TEXT
     )
     ''')
+
+    # ===== FIX KOLOM TAMBAHAN
+    def ensure_column(table, column):
+        cursor.execute(f"PRAGMA table_info({table})")
+        cols = [c[1] for c in cursor.fetchall()]
+        if column not in cols:
+            try:
+                cursor.execute(f"ALTER TABLE {table} ADD COLUMN {column} TEXT")
+            except:
+                pass
+
+    ensure_column("kas", "keterangan")
 
     conn.commit()
     return conn, cursor
@@ -69,7 +82,7 @@ for k, v in defaults.items():
         st.session_state[k] = v
 
 # ======================
-# HALAMAN PILIH ROLE
+# PILIH ROLE
 # ======================
 if not st.session_state.login and st.session_state.page == "role":
 
@@ -99,7 +112,7 @@ if not st.session_state.login and st.session_state.page == "role":
 # ======================
 elif not st.session_state.login:
 
-    if st.button("Kembali"):
+    if st.button("⬅️ Kembali"):
         st.session_state.page = "role"
         st.rerun()
 
@@ -144,7 +157,7 @@ elif not st.session_state.login:
 # ======================
 else:
 
-    st.title("Dashboard KAS")
+    st.title("📊 Dashboard KAS")
 
     # ================= ADMIN =================
     if st.session_state.role == "admin":
@@ -157,17 +170,22 @@ else:
         nama = st.text_input("Nama Siswa")
         tanggal = st.date_input("Tanggal", datetime.date.today())
         status = st.selectbox("Status", ["Tepat Waktu", "Telat"])
+        keterangan = st.text_input("Keterangan (contoh: Lunas)")
 
         if st.button("Simpan"):
-            cursor.execute(
-                "INSERT INTO kas VALUES (NULL,?,?,?,?,?)",
-                (nama, str(tanggal), status,
-                 st.session_state.kelas,
-                 st.session_state.jurusan)
-            )
-            conn.commit()
-            st.success("Data tersimpan")
-            st.rerun()
+            if nama:
+                cursor.execute(
+                    "INSERT INTO kas VALUES (NULL,?,?,?,?,?,?)",
+                    (nama, str(tanggal), status,
+                     st.session_state.kelas,
+                     st.session_state.jurusan,
+                     keterangan)
+                )
+                conn.commit()
+                st.success("Data tersimpan")
+                st.rerun()
+            else:
+                st.warning("Nama tidak boleh kosong")
 
         # AMBIL DATA
         df = pd.read_sql(
@@ -176,67 +194,63 @@ else:
             params=(st.session_state.kelas, st.session_state.jurusan)
         )
 
-        st.subheader("Data Siswa")
+        st.subheader("📋 Data Siswa")
         st.dataframe(df, use_container_width=True)
 
-        # ================= AI ANALISIS =================
-        st.subheader("Analisis Otomatis")
+        # ================= HAPUS DATA =================
+        st.subheader("🗑️ Hapus Data")
+
+        konfirmasi = st.checkbox("Saya yakin ingin menghapus data")
+
+        col1, col2, col3 = st.columns(3)
+
+        # hapus berdasarkan ID
+        with col1:
+            id_hapus = st.number_input("Hapus berdasarkan ID", step=1)
+            if st.button("Hapus ID") and konfirmasi:
+                cursor.execute("DELETE FROM kas WHERE id=?", (id_hapus,))
+                conn.commit()
+                st.success("Data berhasil dihapus")
+                st.rerun()
+
+        # hapus per siswa
+        with col2:
+            if not df.empty:
+                siswa_hapus = st.selectbox("Hapus per siswa", df["nama"].unique())
+                if st.button("Hapus Siswa") and konfirmasi:
+                    cursor.execute(
+                        "DELETE FROM kas WHERE nama=? AND kelas=? AND jurusan=?",
+                        (siswa_hapus,
+                         st.session_state.kelas,
+                         st.session_state.jurusan)
+                    )
+                    conn.commit()
+                    st.success("Data siswa dihapus")
+                    st.rerun()
+
+        # hapus semua
+        with col3:
+            if st.button("Hapus Semua Data") and konfirmasi:
+                cursor.execute(
+                    "DELETE FROM kas WHERE kelas=? AND jurusan=?",
+                    (st.session_state.kelas,
+                     st.session_state.jurusan)
+                )
+                conn.commit()
+                st.success("Semua data dihapus")
+                st.rerun()
+
+        # ================= ANALISIS =================
+        st.subheader("📈 Analisis")
 
         if not df.empty:
-            total = len(df)
-            tepat = len(df[df["status"] == "Tepat Waktu"])
-            telat = len(df[df["status"] == "Telat"])
-
-            persen_telat = (telat / total) * 100
-
-            st.metric("Total Data", total)
-            st.metric("Tepat Waktu", tepat)
-            st.metric("Telat", telat)
-
             st.bar_chart(df["status"].value_counts())
-
-            # AI Insight
-            if persen_telat < 20:
-                st.success("Performa sangat baik 👍")
-            elif persen_telat < 50:
-                st.warning("Performa cukup, perlu peningkatan ⚠️")
-            else:
-                st.error("Performa buruk ❌")
-
         else:
             st.info("Belum ada data")
 
-        # ================= CEK PERFORMA SISWA =================
-        st.subheader("Cek Performa Siswa")
-
-        if not df.empty:
-            siswa = st.selectbox("Pilih Siswa", df["nama"].unique())
-
-            if st.button("Cek Performa"):
-
-                data_siswa = df[df["nama"] == siswa]
-
-                hasil = data_siswa["status"].value_counts()
-
-                st.write(f"Performa: {siswa}")
-
-                st.bar_chart(hasil)
-
-                total = len(data_siswa)
-                telat = len(data_siswa[data_siswa["status"] == "Telat"])
-
-                persen = (telat / total) * 100 if total > 0 else 0
-
-                if persen < 20:
-                    st.success("Siswa disiplin 👍")
-                elif persen < 50:
-                    st.warning("Perlu perhatian ⚠️")
-                else:
-                    st.error("Sering telat ❌")
-
     # ================= USER =================
     elif st.session_state.role == "user":
-        st.info("Mode User (Read Only)")
+        st.info("Mode User")
         df = pd.read_sql("SELECT * FROM kas", conn)
         st.dataframe(df)
 
