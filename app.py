@@ -11,7 +11,7 @@ import hashlib
 st.set_page_config(layout="wide")
 
 # ======================
-# DEVELOPER LOGIN
+# DEV LOGIN
 # ======================
 DEV_USER = "developer"
 DEV_PASS = "kaskita"
@@ -23,7 +23,7 @@ def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
 # ======================
-# DATABASE
+# DB
 # ======================
 def init_db():
     conn = sqlite3.connect("kas.db", check_same_thread=False)
@@ -65,77 +65,82 @@ defaults = {
     "kelas": None,
     "jurusan": None,
     "otp": None,
-    "reset_mode": False
+    "reset_mode": False,
+    "page": "role"   # ⬅️ halaman awal
 }
 
-for key, val in defaults.items():
-    if key not in st.session_state:
-        st.session_state[key] = val
+for k, v in defaults.items():
+    if k not in st.session_state:
+        st.session_state[k] = v
 
 # ======================
-# LOGIN PAGE
+# HALAMAN PILIH ROLE
 # ======================
-if not st.session_state.login:
+if not st.session_state.login and st.session_state.page == "role":
 
-    st.title("🔐 Login Sistem KAS")
+    st.title("🚀 Selamat Datang di KAS KITA")
+    st.subheader("Pilih Login Sebagai")
 
-    role = st.selectbox("Login sebagai", ["Admin", "User", "Developer"])
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        if st.button("👨‍💼 Admin"):
+            st.session_state.role = "admin"
+            st.session_state.page = "login"
+
+    with col2:
+        if st.button("👤 User"):
+            st.session_state.role = "user"
+            st.session_state.login = True
+            st.rerun()
+
+    with col3:
+        if st.button("🧑‍💻 Developer"):
+            st.session_state.role = "dev"
+            st.session_state.page = "login"
+
+# ======================
+# HALAMAN LOGIN
+# ======================
+elif not st.session_state.login and st.session_state.page == "login":
+
+    st.title("🔐 Login")
 
     # ================= ADMIN =================
-    if role == "Admin":
+    if st.session_state.role == "admin":
 
         menu = st.radio("Menu", ["Login", "Register", "Lupa Password"])
 
-        # ===== LOGIN =====
+        # LOGIN
         if menu == "Login":
-
             username = st.text_input("Username")
             password = st.text_input("Password", type="password")
             kelas = st.selectbox("Kelas", ["10", "11", "12"])
             jurusan = st.text_input("Jurusan")
 
             if st.button("Login"):
-
-                username = username.strip()
-                jurusan = jurusan.strip().upper()
-                hashed = hash_password(password)
-
-                # cek username dulu
                 cursor.execute("SELECT * FROM admin WHERE username=?", (username,))
-                user_data = cursor.fetchone()
+                data = cursor.fetchone()
 
-                if not user_data:
+                if not data:
                     st.error("Username tidak ditemukan")
-                    st.info("Silakan gunakan menu 'Lupa Password' jika lupa akun")
-
+                elif data[2] != hash_password(password):
+                    st.error("Password salah")
+                    st.session_state.reset_mode = True
+                elif data[4] != kelas or data[5] != jurusan.upper():
+                    st.error("Kelas/Jurusan salah")
                 else:
-                    # cek password
-                    if user_data[2] != hashed:
-                        st.error("Password salah")
-                        st.session_state.reset_mode = True
-
-                    # cek kelas & jurusan
-                    elif user_data[4] != kelas or user_data[5] != jurusan:
-                        st.error("Kelas atau jurusan tidak sesuai")
-
-                    else:
-                        st.session_state.login = True
-                        st.session_state.role = "admin"
-                        st.session_state.kelas = kelas
-                        st.session_state.jurusan = jurusan
-                        st.success("Login berhasil")
-                        st.rerun()
-
-            # tampilkan tombol lupa password setelah gagal
-            if st.session_state.reset_mode:
-                st.warning("Lupa password?")
-                if st.button("Ke Menu Lupa Password"):
-                    st.session_state.reset_mode = False
+                    st.session_state.login = True
+                    st.session_state.kelas = kelas
+                    st.session_state.jurusan = jurusan.upper()
                     st.rerun()
 
-        # ===== REGISTER =====
-        elif menu == "Register":
+            if st.session_state.reset_mode:
+                if st.button("Lupa Password?"):
+                    st.session_state.page = "reset"
 
+        # REGISTER
+        elif menu == "Register":
             user = st.text_input("Username")
             pw = st.text_input("Password", type="password")
             email = st.text_input("Email")
@@ -143,88 +148,78 @@ if not st.session_state.login:
             jurusan = st.text_input("Jurusan")
 
             if st.button("Daftar"):
-
                 cursor.execute(
                     "SELECT * FROM admin WHERE kelas=? AND jurusan=?",
                     (kelas, jurusan.upper())
                 )
-
                 if cursor.fetchone():
-                    st.error("Admin kelas & jurusan sudah ada")
+                    st.error("Admin sudah ada")
                 else:
                     cursor.execute(
-                        """INSERT INTO admin 
-                        (username,password,email,kelas,jurusan)
-                        VALUES (?,?,?,?,?)""",
-                        (user,
-                         hash_password(pw),
-                         email,
-                         kelas,
-                         jurusan.upper())
+                        "INSERT INTO admin VALUES (NULL,?,?,?,?,?)",
+                        (user, hash_password(pw), email, kelas, jurusan.upper())
                     )
                     conn.commit()
-                    st.success("Akun berhasil dibuat")
-
-        # ===== LUPA PASSWORD =====
-        elif menu == "Lupa Password":
-
-            email = st.text_input("Masukkan Email")
-
-            if st.button("Kirim OTP"):
-                cursor.execute("SELECT * FROM admin WHERE email=?", (email,))
-                if cursor.fetchone():
-                    otp = str(random.randint(1000, 9999))
-                    st.session_state.otp = otp
-                    st.success(f"OTP (simulasi): {otp}")
-                else:
-                    st.error("Email tidak ditemukan")
-
-            otp_input = st.text_input("Masukkan OTP")
-            new_pw = st.text_input("Password Baru", type="password")
-
-            if st.button("Reset Password"):
-                if otp_input == st.session_state.otp:
-                    cursor.execute(
-                        "UPDATE admin SET password=? WHERE email=?",
-                        (hash_password(new_pw), email)
-                    )
-                    conn.commit()
-                    st.success("Password berhasil diubah")
-                else:
-                    st.error("OTP salah")
-
-    # ================= USER =================
-    elif role == "User":
-        if st.button("Masuk sebagai User"):
-            st.session_state.login = True
-            st.session_state.role = "user"
-            st.rerun()
+                    st.success("Berhasil daftar")
 
     # ================= DEVELOPER =================
-    else:
-        user = st.text_input("Developer Username")
-        pw = st.text_input("Developer Password", type="password")
+    elif st.session_state.role == "dev":
+
+        user = st.text_input("Username")
+        pw = st.text_input("Password", type="password")
 
         if st.button("Login Developer"):
             if user == DEV_USER and pw == DEV_PASS:
                 st.session_state.login = True
-                st.session_state.role = "dev"
                 st.rerun()
             else:
-                st.error("Username atau password developer salah")
+                st.error("Login developer gagal")
+
+# ======================
+# RESET PASSWORD PAGE
+# ======================
+elif st.session_state.page == "reset":
+
+    st.title("🔁 Reset Password")
+
+    email = st.text_input("Email")
+
+    if st.button("Kirim OTP"):
+        cursor.execute("SELECT * FROM admin WHERE email=?", (email,))
+        if cursor.fetchone():
+            otp = str(random.randint(1000, 9999))
+            st.session_state.otp = otp
+            st.success(f"OTP: {otp}")
+        else:
+            st.error("Email tidak ditemukan")
+
+    otp_input = st.text_input("Masukkan OTP")
+    new_pw = st.text_input("Password Baru", type="password")
+
+    if st.button("Reset"):
+        if otp_input == st.session_state.otp:
+            cursor.execute(
+                "UPDATE admin SET password=? WHERE email=?",
+                (hash_password(new_pw), email)
+            )
+            conn.commit()
+            st.success("Password berhasil diubah")
+            st.session_state.page = "login"
+        else:
+            st.error("OTP salah")
 
 # ======================
 # MAIN APP
 # ======================
-else:
+elif st.session_state.login:
 
     st.title("📊 KAS KITA")
 
-    # ================= ADMIN =================
+    # ADMIN
     if st.session_state.role == "admin":
         st.success(f"Admin {st.session_state.kelas}-{st.session_state.jurusan}")
 
-        nama = st.text_input("Nama Siswa")
+        nama = st.text_input("Nama")
         tanggal = st.date_input("Tanggal", datetime.date.today())
         status = st.selectbox("Status", ["Tepat Waktu", "Telat"])
 
@@ -245,36 +240,26 @@ else:
         )
         st.dataframe(df)
 
-    # ================= USER =================
+    # USER
     elif st.session_state.role == "user":
-        st.info("User mode")
+        st.info("User Mode")
         df = pd.read_sql("SELECT * FROM kas", conn)
         st.dataframe(df)
 
-    # ================= DEVELOPER =================
+    # DEVELOPER
     elif st.session_state.role == "dev":
-        st.warning("Developer Mode 🔧")
+        st.warning("Developer Mode")
 
-        st.subheader("📊 Semua Data Kas")
         df = pd.read_sql("SELECT * FROM kas", conn)
         st.dataframe(df)
 
-        st.subheader("👤 Data Admin")
         admin_df = pd.read_sql(
             "SELECT id, username, email, kelas, jurusan FROM admin",
             conn
         )
         st.dataframe(admin_df)
 
-        id_hapus = st.number_input("Masukkan ID Admin", step=1)
-
-        if st.button("Hapus Admin"):
-            cursor.execute("DELETE FROM admin WHERE id=?", (id_hapus,))
-            conn.commit()
-            st.success("Admin dihapus")
-            st.rerun()
-
-    # ================= LOGOUT =================
+    # LOGOUT
     if st.button("Logout"):
         st.session_state.clear()
         st.rerun()
