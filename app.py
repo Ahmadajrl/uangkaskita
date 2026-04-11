@@ -161,7 +161,7 @@ elif not st.session_state.login:
             pw = st.text_input("Password Baru", type="password")
             email = st.text_input("Email")
             kelas = st.selectbox("Kelas", ["10", "11", "12"])
-            jurusan = st.text_input("Jurusan")
+            jurusan = st.text_input("Jurusan (contoh: TKJ 1)")
 
             if st.button("Daftar"):
 
