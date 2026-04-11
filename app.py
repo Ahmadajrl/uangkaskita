@@ -184,57 +184,18 @@ elif not st.session_state.login:
                     st.session_state.kelas = kelas
                     st.session_state.jurusan = jurusan.upper()
                     st.rerun()
-    # ================= USER =================
-    if st.session_state.role == "user":
 
-        st.title("📊 Dashboard User")
+# ======================
+# MAIN APP
+# ======================
+else:
 
-        df = pd.read_sql(
-            "SELECT * FROM kas WHERE kelas=? AND jurusan=?",
-            conn,
-            params=(st.session_state.kelas, st.session_state.jurusan)
-        )
+    st.title("📊 Dashboard KAS")
 
-        if df.empty:
-            st.info("Belum ada data kas")
-        else:
-            df["tanggal"] = pd.to_datetime(df["tanggal"])
-            df["bulan"] = df["tanggal"].dt.strftime("%B %Y")
-            df["tanggal"] = df["tanggal"].dt.strftime("%Y-%m-%d")
-
-            # FILTER
-            col1, col2, col3 = st.columns(3)
-
-            with col1:
-                kelas_filter = st.selectbox("Filter Kelas", sorted(df["kelas"].unique()))
-
-            with col2:
-                jurusan_filter = st.selectbox("Filter Jurusan", sorted(df["jurusan"].unique()))
-
-            with col3:
-                bulan_filter = st.selectbox("Filter Bulan", sorted(df["bulan"].unique()))
-
-            df_filtered = df[
-                (df["kelas"] == kelas_filter) &
-                (df["jurusan"] == jurusan_filter) &
-                (df["bulan"] == bulan_filter)
-            ]
-
-            # ❌ TOTAL DIHAPUS SESUAI REQUEST KAMU
-
-            # TABEL
-            st.subheader("📋 Data Pembayaran Kas")
-            st.dataframe(df_filtered)
-
-            # STATISTIK
-            st.subheader("📈 Statistik")
-            if not df_filtered.empty:
-                st.bar_chart(df_filtered["status"].value_counts())
-
-    # ================= ADMIN =================
-    elif st.session_state.role == "admin":
+    if st.session_state.role == "admin":
 
         st.success(f"Kelas {st.session_state.kelas} - {st.session_state.jurusan}")
+
         colA, colB = st.columns(2)
         with colA:
             if st.button("📊 Dashboard"):
