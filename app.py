@@ -15,29 +15,47 @@ st.set_page_config(layout="wide")
 conn = sqlite3.connect("kas.db", check_same_thread=False)
 cursor = conn.cursor()
 
-# tabel kas (DITAMBAH KOLOM KELAS)
+# ======================
+# CREATE TABLE
+# ======================
 cursor.execute('''
 CREATE TABLE IF NOT EXISTS kas (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     nama TEXT,
     tanggal TEXT,
-    status TEXT,
-    kelas TEXT
+    status TEXT
 )
 ''')
 
-# tabel admin (DITAMBAH KELAS)
 cursor.execute('''
 CREATE TABLE IF NOT EXISTS admin (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT,
     password TEXT,
-    email TEXT,
-    kelas TEXT
+    email TEXT
 )
 ''')
 
 conn.commit()
+
+# ======================
+# FIX DATABASE (AUTO UPDATE KOLOM)
+# ======================
+# cek kolom kas
+cursor.execute("PRAGMA table_info(kas)")
+columns_kas = [col[1] for col in cursor.fetchall()]
+
+if "kelas" not in columns_kas:
+    cursor.execute("ALTER TABLE kas ADD COLUMN kelas TEXT")
+    conn.commit()
+
+# cek kolom admin
+cursor.execute("PRAGMA table_info(admin)")
+columns_admin = [col[1] for col in cursor.fetchall()]
+
+if "kelas" not in columns_admin:
+    cursor.execute("ALTER TABLE admin ADD COLUMN kelas TEXT")
+    conn.commit()
 
 # ======================
 # SESSION
@@ -73,7 +91,10 @@ if not st.session_state.login_status:
             password = st.text_input("Password", type="password")
 
             if st.button("Login"):
-                cursor.execute("SELECT * FROM admin WHERE username=? AND password=?", (username, password))
+                cursor.execute(
+                    "SELECT * FROM admin WHERE username=? AND password=?",
+                    (username, password)
+                )
                 data = cursor.fetchone()
 
                 if data:
@@ -93,8 +114,10 @@ if not st.session_state.login_status:
             kelas = st.selectbox("Pilih Kelas", ["A", "B", "C"])
 
             if st.button("Daftar"):
-                cursor.execute("INSERT INTO admin (username, password, email, kelas) VALUES (?, ?, ?, ?)",
-                               (new_user, new_pass, email, kelas))
+                cursor.execute(
+                    "INSERT INTO admin (username, password, email, kelas) VALUES (?, ?, ?, ?)",
+                    (new_user, new_pass, email, kelas)
+                )
                 conn.commit()
                 st.success("Akun berhasil dibuat!")
 
@@ -112,8 +135,10 @@ if not st.session_state.login_status:
 
             if st.button("Reset Password"):
                 if otp_input == st.session_state.otp:
-                    cursor.execute("UPDATE admin SET password=? WHERE email=?",
-                                   (new_pass, email))
+                    cursor.execute(
+                        "UPDATE admin SET password=? WHERE email=?",
+                        (new_pass, email)
+                    )
                     conn.commit()
                     st.success("Password berhasil diubah!")
                 else:
@@ -158,10 +183,10 @@ else:
             else:
                 st.warning("Nama tidak boleh kosong!")
 
-    # ================= AMBIL DATA (FILTER KELAS)
+    # ================= AMBIL DATA (FIX ERROR NULL + FILTER)
     if st.session_state.role == "admin":
         df = pd.read_sql(
-            "SELECT * FROM kas WHERE kelas = ?",
+            "SELECT * FROM kas WHERE kelas = ? OR kelas IS NULL",
             conn,
             params=(st.session_state.kelas,)
         )
