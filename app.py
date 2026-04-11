@@ -121,7 +121,6 @@ elif not st.session_state.login:
 
         menu = st.radio("Menu", ["Login", "Register", "Lupa Password"])
 
-        # LOGIN
         if menu == "Login":
             username = st.text_input("Username")
             password = st.text_input("Password", type="password")
@@ -144,7 +143,6 @@ elif not st.session_state.login:
                     st.session_state.jurusan = jurusan.upper()
                     st.rerun()
 
-        # REGISTER
         elif menu == "Register":
             user = st.text_input("Username Baru")
             pw = st.text_input("Password", type="password")
@@ -168,7 +166,6 @@ elif not st.session_state.login:
                     conn.commit()
                     st.success("Akun berhasil dibuat")
 
-        # LUPA PASSWORD
         elif menu == "Lupa Password":
             email = st.text_input("Email")
 
@@ -213,38 +210,33 @@ else:
 
     st.title("📊 Dashboard KAS")
 
-    # ================= ADMIN =================
     if st.session_state.role == "admin":
 
         st.success(f"Kelas {st.session_state.kelas} - {st.session_state.jurusan}")
 
-        # INPUT
+        # ================= INPUT =================
         st.subheader("➕ Input Pembayaran")
 
         nama = st.text_input("Nama Siswa")
         tanggal = st.date_input("Tanggal")
         status = st.selectbox("Status", ["Tepat Waktu", "Telat"])
         keterangan = st.text_input("Keterangan")
-        nominal = st.text_input("Nominal (bebas, contoh: 2.000 / 2000)")
+        nominal = st.text_input("Nominal")
 
         if st.button("Simpan"):
             cursor.execute(
                 "INSERT INTO kas VALUES (NULL,?,?,?,?,?,?,?)",
-                (
-                    nama,
-                    str(tanggal),
-                    status,
-                    st.session_state.kelas,
-                    st.session_state.jurusan,
-                    keterangan,
-                    nominal
-                )
+                (nama, str(tanggal), status,
+                 st.session_state.kelas,
+                 st.session_state.jurusan,
+                 keterangan,
+                 nominal)
             )
             conn.commit()
             st.success("Data tersimpan")
             st.rerun()
 
-        # ================= AMBIL DATA =================
+        # ================= DATA =================
         df = pd.read_sql(
             "SELECT * FROM kas WHERE kelas=? AND jurusan=?",
             conn,
@@ -255,59 +247,64 @@ else:
             df["tanggal"] = pd.to_datetime(df["tanggal"])
             df["bulan"] = df["tanggal"].dt.strftime("%B %Y")
 
-        # ================= TOTAL KAS =================
+        # ================= TOTAL =================
         if not df.empty:
             total = df["nominal"].apply(clean_nominal).sum()
             st.metric("💰 Total Kas", format_rupiah(total))
 
         # ================= TABEL PER BULAN =================
-        st.subheader("📊 Data Kas per Bulan")
+        st.subheader("📅 Data per Bulan")
 
         if not df.empty:
             for bulan in sorted(df["bulan"].unique()):
-                st.markdown(f"### 📅 {bulan}")
+                st.markdown(f"### {bulan}")
+                st.dataframe(df[df["bulan"] == bulan])
 
-                df_bulan = df[df["bulan"] == bulan]
-                df_bulan = df_bulan.sort_values("nama")
+        # ================= ANALISIS =================
+        st.subheader("📈 Analisis")
 
-                st.dataframe(df_bulan, use_container_width=True)
+        if not df.empty:
+            total = len(df)
+            tepat = len(df[df["status"] == "Tepat Waktu"])
+            telat = len(df[df["status"] == "Telat"])
 
-        else:
-            st.info("Belum ada data")
+            persen_telat = (telat / total) * 100
 
-        # ================= HAPUS DATA =================
-        st.subheader("🗑️ Hapus Data")
+            st.metric("Total Data", total)
+            st.metric("Tepat Waktu", tepat)
+            st.metric("Telat", telat)
 
-        konfirmasi = st.checkbox("Saya yakin")
+            st.bar_chart(df["status"].value_counts())
 
-        col1, col2, col3 = st.columns(3)
+            if persen_telat < 20:
+                st.success("Performa sangat baik 👍")
+            elif persen_telat < 50:
+                st.warning("Performa cukup ⚠️")
+            else:
+                st.error("Performa buruk ❌")
 
-        with col1:
-            id_hapus = st.number_input("ID", step=1)
-            if st.button("Hapus ID") and konfirmasi:
-                cursor.execute("DELETE FROM kas WHERE id=?", (id_hapus,))
-                conn.commit()
-                st.rerun()
+        # ================= CEK PERFORMA SISWA =================
+        st.subheader("📊 Cek Performa Siswa")
 
-        with col2:
-            if not df.empty:
-                siswa = st.selectbox("Siswa", df["nama"].unique())
-                if st.button("Hapus Siswa") and konfirmasi:
-                    cursor.execute(
-                        "DELETE FROM kas WHERE nama=? AND kelas=? AND jurusan=?",
-                        (siswa, st.session_state.kelas, st.session_state.jurusan)
-                    )
-                    conn.commit()
-                    st.rerun()
+        if not df.empty:
+            siswa = st.selectbox("Pilih Siswa", df["nama"].unique())
 
-        with col3:
-            if st.button("Hapus Semua") and konfirmasi:
-                cursor.execute(
-                    "DELETE FROM kas WHERE kelas=? AND jurusan=?",
-                    (st.session_state.kelas, st.session_state.jurusan)
-                )
-                conn.commit()
-                st.rerun()
+            if st.button("Cek Performa"):
+                data_siswa = df[df["nama"] == siswa]
+                hasil = data_siswa["status"].value_counts()
+
+                st.bar_chart(hasil)
+
+                total = len(data_siswa)
+                telat = len(data_siswa[data_siswa["status"] == "Telat"])
+                persen = (telat / total) * 100 if total else 0
+
+                if persen < 20:
+                    st.success("Siswa disiplin 👍")
+                elif persen < 50:
+                    st.warning("Perlu perhatian ⚠️")
+                else:
+                    st.error("Sering telat ❌")
 
     # ================= USER =================
     elif st.session_state.role == "user":
@@ -318,7 +315,7 @@ else:
             df["bulan"] = df["tanggal"].dt.strftime("%B %Y")
 
             for bulan in sorted(df["bulan"].unique()):
-                st.markdown(f"### 📅 {bulan}")
+                st.markdown(f"### {bulan}")
                 st.dataframe(df[df["bulan"] == bulan])
 
     # ================= DEV =================
