@@ -10,13 +10,12 @@ import random
 st.set_page_config(layout="wide")
 
 # ======================
-# DATABASE INIT (SUPER AMAN)
+# DATABASE INIT
 # ======================
 def init_db():
     conn = sqlite3.connect("kas.db", check_same_thread=False)
     cursor = conn.cursor()
 
-    # Buat tabel dengan struktur lengkap
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS kas (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -39,17 +38,16 @@ def init_db():
 
     conn.commit()
 
-    # ===== FIX KOLOM (ANTI ERROR TOTAL)
+    # cek kolom (anti error lama)
     def ensure_column(table, column):
         cursor.execute(f"PRAGMA table_info({table})")
         columns = [col[1] for col in cursor.fetchall()]
-
         if column not in columns:
             try:
                 cursor.execute(f"ALTER TABLE {table} ADD COLUMN {column} TEXT")
                 conn.commit()
             except:
-                pass  # ignore kalau sudah ada
+                pass
 
     ensure_column("kas", "kelas")
     ensure_column("admin", "kelas")
@@ -60,7 +58,7 @@ def init_db():
 conn, cursor = init_db()
 
 # ======================
-# SESSION STATE
+# SESSION
 # ======================
 if "login" not in st.session_state:
     st.session_state.login = False
@@ -83,7 +81,6 @@ if not st.session_state.login:
 
     role = st.selectbox("Login sebagai", ["Admin", "User"])
 
-    # ================= ADMIN =================
     if role == "Admin":
 
         menu = st.radio("Menu", ["Login", "Register", "Lupa Password"])
@@ -147,7 +144,6 @@ if not st.session_state.login:
                 else:
                     st.error("OTP salah")
 
-    # ================= USER =================
     else:
         if st.button("Masuk sebagai User"):
             st.session_state.login = True
@@ -166,7 +162,7 @@ else:
     else:
         st.info("User (Read Only)")
 
-    # ================= INPUT (ADMIN ONLY)
+    # ================= INPUT
     if st.session_state.role == "admin":
         st.subheader("➕ Input Pembayaran")
 
@@ -182,13 +178,14 @@ else:
                 )
                 conn.commit()
                 st.success("Data tersimpan")
+                st.rerun()
             else:
                 st.warning("Nama kosong")
 
-    # ================= AMBIL DATA (AMAN)
+    # ================= AMBIL DATA (SUDAH FIX)
     if st.session_state.role == "admin":
         df = pd.read_sql(
-            "SELECT * FROM kas WHERE kelas = ? OR kelas IS NULL",
+            "SELECT * FROM kas WHERE kelas = ?",
             conn,
             params=(st.session_state.kelas,)
         )
@@ -220,6 +217,43 @@ else:
 
             st.bar_chart(hasil)
             st.write(hasil)
+
+    # ================= HAPUS DATA
+    if st.session_state.role == "admin":
+        st.subheader("🗑️ Hapus Data")
+
+        konfirmasi = st.checkbox("Saya yakin ingin menghapus")
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+            if st.button("Hapus Semua Data") and konfirmasi:
+                cursor.execute("DELETE FROM kas")
+                conn.commit()
+                st.success("Semua data dihapus")
+                st.rerun()
+
+        with col2:
+            if st.button("Hapus Data Kelas Ini") and konfirmasi:
+                cursor.execute(
+                    "DELETE FROM kas WHERE kelas=?",
+                    (st.session_state.kelas,)
+                )
+                conn.commit()
+                st.success("Data kelas dihapus")
+                st.rerun()
+
+        if not df.empty:
+            siswa_hapus = st.selectbox("Pilih siswa", df["nama"].unique())
+
+            if st.button("Hapus Data Siswa") and konfirmasi:
+                cursor.execute(
+                    "DELETE FROM kas WHERE nama=? AND kelas=?",
+                    (siswa_hapus, st.session_state.kelas)
+                )
+                conn.commit()
+                st.success("Data siswa dihapus")
+                st.rerun()
 
     # ================= LOGOUT
     if st.button("Logout"):
