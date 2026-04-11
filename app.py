@@ -13,7 +13,7 @@ DEV_USER = "developer"
 DEV_PASS = "kaskita"
 
 # ======================
-# FORMAT
+# FORMAT RUPIAH
 # ======================
 def format_rupiah(angka):
     return "Rp.{:,.0f}".format(angka).replace(",", ".")
@@ -25,13 +25,34 @@ def clean_nominal(n):
     return int(n) if n.isdigit() else 0
 
 # ======================
-# DB
+# PDF GENERATOR
+# ======================
+def generate_pdf(df):
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer)
+
+    data = [df.columns.tolist()] + df.values.tolist()
+
+    table = Table(data)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.grey),
+        ('TEXTCOLOR',(0,0),(-1,0),colors.white),
+        ('GRID',(0,0),(-1,-1),1,colors.black)
+    ]))
+
+    doc.build([table])
+    buffer.seek(0)
+    return buffer
+
+# ======================
+# DB INIT
 # ======================
 def init_db():
     conn = sqlite3.connect("kas.db", check_same_thread=False)
     cursor = conn.cursor()
 
-    cursor.execute('''CREATE TABLE IF NOT EXISTS kas (
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS kas (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         nama TEXT,
         tanggal TEXT,
@@ -40,25 +61,30 @@ def init_db():
         jurusan TEXT,
         keterangan TEXT,
         nominal INTEGER
-    )''')
+    )
+    ''')
 
-    cursor.execute('''CREATE TABLE IF NOT EXISTS admin (
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS admin (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT,
         password TEXT,
         email TEXT,
         kelas TEXT,
         jurusan TEXT
-    )''')
+    )
+    ''')
 
-    cursor.execute('''CREATE TABLE IF NOT EXISTS pengeluaran (
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS pengeluaran (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         tanggal TEXT,
         kelas TEXT,
         jurusan TEXT,
         keterangan TEXT,
         nominal INTEGER
-    )''')
+    )
+    ''')
 
     conn.commit()
     return conn, cursor
@@ -89,7 +115,7 @@ with col2:
     st.image("logo.png", use_container_width=True)
 
 # ======================
-# ROLE
+# ROLE PAGE
 # ======================
 if not st.session_state.login and st.session_state.page == "role":
 
@@ -121,7 +147,7 @@ elif not st.session_state.login:
 
     st.title("Login")
 
-    # ADMIN
+    # ADMIN LOGIN
     if st.session_state.role == "admin":
 
         user = st.text_input("Username")
@@ -129,13 +155,13 @@ elif not st.session_state.login:
         kelas = st.selectbox("Kelas", ["10","11","12"])
         jurusan = st.text_input("Jurusan")
 
-        if st.button("Login"):
+        if st.button("Login Admin"):
             st.session_state.login = True
             st.session_state.kelas = kelas
             st.session_state.jurusan = jurusan.upper()
             st.rerun()
 
-    # DEV
+    # DEV LOGIN
     elif st.session_state.role == "dev":
 
         user = st.text_input("Username Developer")
@@ -184,40 +210,57 @@ else:
             st.metric("Total Kas", format_rupiah(df["nominal"].sum()))
             st.dataframe(df)
 
+        if st.button("Logout"):
+            st.session_state.clear()
+            st.rerun()
+
     # ================= DEVELOPER =================
     elif st.session_state.role == "dev":
 
-        st.subheader("Developer Panel")
+        st.subheader("🛠️ Developer Panel")
 
-        st.dataframe(pd.read_sql("SELECT * FROM admin", conn))
+        df_admin = pd.read_sql("SELECT * FROM admin", conn)
+        df_kas = pd.read_sql("SELECT * FROM kas", conn)
 
-        idd = st.number_input("Hapus Akun ID", step=1)
-        if st.button("Hapus"):
-            cursor.execute("DELETE FROM admin WHERE id=?", (idd,))
-            conn.commit()
+        st.subheader("👤 Data Akun Admin")
+        st.dataframe(df_admin)
+
+        if not df_admin.empty:
+            id_del = st.number_input("Hapus ID Akun", step=1)
+            if st.button("Hapus Akun"):
+                cursor.execute("DELETE FROM admin WHERE id=?", (id_del,))
+                conn.commit()
+                st.success("Akun dihapus")
+                st.rerun()
+
+        st.subheader("📊 Semua Data Kas")
+        st.dataframe(df_kas)
+
+        if st.button("Logout"):
+            st.session_state.clear()
             st.rerun()
-
-        st.dataframe(pd.read_sql("SELECT * FROM kas", conn))
 
     # ================= ADMIN =================
     elif st.session_state.role == "admin":
 
-        st.success(f"{st.session_state.kelas} - {st.session_state.jurusan}")
+        st.success(f"Kelas {st.session_state.kelas} - {st.session_state.jurusan}")
 
         colA, colB = st.columns(2)
 
         with colA:
-            if st.button("Dashboard"):
+            if st.button("📊 Dashboard"):
                 st.session_state.menu = "dashboard"
                 st.rerun()
 
         with colB:
-            if st.button("Pengeluaran"):
+            if st.button("💸 Pengeluaran"):
                 st.session_state.menu = "pengeluaran"
                 st.rerun()
 
         # ================= DASHBOARD =================
         if st.session_state.menu == "dashboard":
+
+            st.subheader("➕ Input Pembayaran")
 
             nama = st.text_input("Nama")
             tgl = st.date_input("Tanggal")
@@ -226,46 +269,90 @@ else:
             nom = st.text_input("Nominal")
 
             if st.button("Simpan"):
-                cursor.execute("INSERT INTO kas VALUES (NULL,?,?,?,?,?,?,?)",
-                               (nama,tgl.strftime("%Y-%m-%d"),status,
-                                st.session_state.kelas,
-                                st.session_state.jurusan,
-                                ket,
-                                clean_nominal(nom)))
+                cursor.execute(
+                    "INSERT INTO kas VALUES (NULL,?,?,?,?,?,?,?)",
+                    (nama, tgl.strftime("%Y-%m-%d"), status,
+                     st.session_state.kelas,
+                     st.session_state.jurusan,
+                     ket,
+                     clean_nominal(nom))
+                )
                 conn.commit()
                 st.rerun()
 
-            # ================= STATISTIK =================
-            df = pd.read_sql("SELECT * FROM kas WHERE kelas=? AND jurusan=?",
-                             conn, params=(st.session_state.kelas, st.session_state.jurusan))
+            df = pd.read_sql(
+                "SELECT * FROM kas WHERE kelas=? AND jurusan=?",
+                conn,
+                params=(st.session_state.kelas, st.session_state.jurusan)
+            )
 
             if not df.empty:
-                st.subheader("Statistik")
+                st.subheader("📈 Statistik")
 
                 st.metric("Total Kas", format_rupiah(df["nominal"].sum()))
 
-        # ================= PENGELUARAN (FIX SALDO) =================
+                st.bar_chart(df["status"].value_counts())
+
+            # ================= HAPUS =================
+            st.subheader("🗑️ Hapus Data")
+
+            konfirmasi = st.checkbox("Konfirmasi")
+
+            col1, col2, col3 = st.columns(3)
+
+            with col1:
+                id_hapus = st.number_input("Hapus ID", step=1)
+                if st.button("Hapus ID") and konfirmasi:
+                    cursor.execute("DELETE FROM kas WHERE id=?", (id_hapus,))
+                    conn.commit()
+                    st.rerun()
+
+            with col2:
+                if not df.empty:
+                    siswa = st.selectbox("Hapus Siswa", df["nama"].unique())
+                    if st.button("Hapus Siswa") and konfirmasi:
+                        cursor.execute("DELETE FROM kas WHERE nama=?", (siswa,))
+                        conn.commit()
+                        st.rerun()
+
+            with col3:
+                if st.button("Hapus Semua") and konfirmasi:
+                    cursor.execute("DELETE FROM kas WHERE kelas=? AND jurusan=?",
+                                   (st.session_state.kelas, st.session_state.jurusan))
+                    conn.commit()
+                    st.rerun()
+
+        # ================= PENGELUARAN (FULL + SALDO + TABEL) =================
         elif st.session_state.menu == "pengeluaran":
+
+            st.subheader("💸 Input Pengeluaran")
 
             tgl = st.date_input("Tanggal")
             ket = st.text_input("Keterangan")
             nom = st.text_input("Nominal")
 
             if st.button("Simpan"):
-                cursor.execute("INSERT INTO pengeluaran VALUES (NULL,?,?,?,?,?)",
-                               (tgl.strftime("%Y-%m-%d"),
-                                st.session_state.kelas,
-                                st.session_state.jurusan,
-                                ket,
-                                clean_nominal(nom)))
+                cursor.execute(
+                    "INSERT INTO pengeluaran VALUES (NULL,?,?,?,?,?)",
+                    (tgl.strftime("%Y-%m-%d"),
+                     st.session_state.kelas,
+                     st.session_state.jurusan,
+                     ket,
+                     clean_nominal(nom))
+                )
                 conn.commit()
 
-            # ================= SALDO (FIXED) =================
-            df_masuk = pd.read_sql("SELECT nominal FROM kas WHERE kelas=? AND jurusan=?",
-                                   conn, params=(st.session_state.kelas, st.session_state.jurusan))
+            df_masuk = pd.read_sql(
+                "SELECT nominal FROM kas WHERE kelas=? AND jurusan=?",
+                conn,
+                params=(st.session_state.kelas, st.session_state.jurusan)
+            )
 
-            df_keluar = pd.read_sql("SELECT nominal FROM pengeluaran WHERE kelas=? AND jurusan=?",
-                                    conn, params=(st.session_state.kelas, st.session_state.jurusan))
+            df_keluar = pd.read_sql(
+                "SELECT * FROM pengeluaran WHERE kelas=? AND jurusan=?",
+                conn,
+                params=(st.session_state.kelas, st.session_state.jurusan)
+            )
 
             total_masuk = df_masuk["nominal"].sum() if not df_masuk.empty else 0
             total_keluar = df_keluar["nominal"].sum() if not df_keluar.empty else 0
@@ -275,5 +362,14 @@ else:
             col1.metric("Total Kas", format_rupiah(total_masuk))
             col2.metric("Total Pengeluaran", format_rupiah(total_keluar))
             col3.metric("Saldo", format_rupiah(saldo))
+
+            st.subheader("📋 Riwayat Pengeluaran")
+
+            if not df_keluar.empty:
+                df_keluar["tanggal"] = pd.to_datetime(df_keluar["tanggal"]).dt.strftime("%Y-%m-%d")
+                st.dataframe(df_keluar)
+
+                pdf = generate_pdf(df_keluar)
+                st.download_button("Download PDF", pdf, "pengeluaran.pdf")
 
 st.write("© kaskita 2026")
