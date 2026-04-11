@@ -116,7 +116,7 @@ if not st.session_state.login and st.session_state.page == "role":
 # ======================
 elif not st.session_state.login:
 
-    if st.button("⬅️ Kembali"):
+    if st.button("Kembali"):
         st.session_state.page = "role"
         st.rerun()
 
@@ -161,7 +161,7 @@ elif not st.session_state.login:
 # ======================
 else:
 
-    st.title("📊 Dashboard KAS")
+    st.title("Dashboard KAS")
 
     # ================= ADMIN =================
     if st.session_state.role == "admin":
@@ -202,16 +202,16 @@ else:
             params=(st.session_state.kelas, st.session_state.jurusan)
         )
 
-        st.subheader("📋 Data Siswa")
+        st.subheader("Data Siswa")
         st.dataframe(df, use_container_width=True)
 
         # ================= TOTAL KAS =================
         total_kas = df["nominal"].sum() if not df.empty else 0
-        st.subheader("💰 Total Kas")
+        st.subheader("Total KAS saat ini")
         st.success(format_rupiah(total_kas))
 
         # ================= HAPUS DATA =================
-        st.subheader("🗑️ Hapus Data")
+        st.subheader("Hapus Data")
 
         konfirmasi = st.checkbox("Saya yakin ingin menghapus data")
 
@@ -254,7 +254,7 @@ else:
                 st.rerun()
 
         # ================= ANALISIS =================
-        st.subheader("📈 Analisis")
+        st.subheader("Analisis")
 
         if not df.empty:
             st.bar_chart(df["status"].value_counts())
@@ -262,7 +262,7 @@ else:
             st.info("Belum ada data")
 
         # ================= CEK PERFORMA SISWA =================
-        st.subheader("📊 Cek Performa Siswa")
+        st.subheader("Cek Performa Siswa")
 
         if not df.empty:
             siswa = st.selectbox("Pilih Siswa", df["nama"].unique())
