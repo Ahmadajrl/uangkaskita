@@ -68,7 +68,7 @@ section[data-testid="stSidebar"] .stButton > button {
     text-align: left;
     border: none !important;
     background: transparent !important;
-    color: rgba(9,242,137,1) !important; /* yang di revisi */
+    color: rgba(1,2,59,1) !important; /* yang di revisi */
     border-radius: 8px !important;
     padding: 8px 12px !important;
     font-size: 13px !important;
