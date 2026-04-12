@@ -18,7 +18,7 @@ st.set_page_config(
 )
 
 # ======================
-# CUSTOM CSS — Navy #01023B + Green #09F289 + Hamburger Menu + User Sidebar #2D303E
+# CUSTOM CSS — Navy #01023B + Green #09F289
 # ======================
 st.markdown("""
 <style>
@@ -132,7 +132,7 @@ div:not(section[data-testid="stSidebar"]) .stNumberInput > div > div > input,
 div:not(section[data-testid="stSidebar"]) .stSelectbox > div > div {
     border-radius: 8px !important;
     border: 1px solid #D1FAE5 !important;
-    background: #FAFFFE !important;
+    background: #2D303E !important;
     font-size: 13px !important;
     color: #01023B !important;
 }
@@ -251,65 +251,6 @@ div:not(section[data-testid="stSidebar"]) .stTextInput > div > div > input:focus
 
 /* ── Divider ── */
 hr { border-color: #D1FAE5 !important; }
-
-/* ── HAMBURGER MENU (USER SIDEBAR) ── */
-.hamburger-container {
-    position: relative;
-    display: inline-block;
-}
-.hamburger-btn {
-    background: none;
-    border: none;
-    font-size: 24px;
-    cursor: pointer;
-    color: #01023B;
-    padding: 8px 12px;
-    border-radius: 8px;
-    transition: background 0.15s;
-}
-.hamburger-btn:hover {
-    background: #E6FDF5;
-}
-.sidebar-menu-user {
-    background: #2D303E !important;
-    padding: 16px 12px;
-    border-radius: 12px;
-    margin-top: 8px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    border: 1px solid #3D4150;
-}
-.sidebar-menu-user .stSelectbox > div > div {
-    background: #3D4150 !important;
-    border-color: #4B4F60 !important;
-    color: #FFFFFF !important;
-}
-.sidebar-menu-user label {
-    color: #B0B5C6 !important;
-}
-.sidebar-menu-user .stButton > button {
-    background: #3D4150 !important;
-    color: #FFFFFF !important;
-    border: none !important;
-    margin-top: 8px;
-    width: 100%;
-    border-radius: 8px;
-    padding: 8px 12px;
-    font-size: 13px;
-}
-.sidebar-menu-user .stButton > button:hover {
-    background: #4B4F60 !important;
-}
-.sidebar-menu-user hr {
-    border-color: #4B4F60 !important;
-    margin: 12px 0;
-}
-.user-info-text {
-    color: #B0B5C6 !important;
-    font-size: 13px;
-    padding: 8px 0;
-    border-bottom: 1px solid #4B4F60;
-    margin-bottom: 12px;
-}
 </style>
 """, unsafe_allow_html=True)
 
@@ -393,8 +334,7 @@ conn, cursor = init_db()
 defaults = {
     "login": False, "role": None,
     "kelas": None,  "jurusan": None,
-    "page": "role", "menu": "dashboard",
-    "hamburger_open": False  # kontrol hamburger menu user
+    "page": "role", "menu": "dashboard"
 }
 for k, v in defaults.items():
     if k not in st.session_state:
@@ -627,55 +567,30 @@ else:
         with st.sidebar:
             render_logo_sidebar()
             info_badge_sidebar("Mode Publik", "#09F289", "rgba(9,242,137,0.12)")
+            sidebar_label("Filter data")
 
         df_all = pd.read_sql("SELECT * FROM kas", conn)
 
-        # === HAMBURGER MENU DI MAIN AREA ===
-        col_title, col_btn = st.columns([6, 1])
-        with col_title:
-            page_header("Data kas kelas", "Lihat rekap pembayaran kas")
-        with col_btn:
-            st.markdown('<div style="padding-top: 12px;">', unsafe_allow_html=True)
-            if st.button("☰", key="hamburger_btn", help="Buka menu filter"):
-                st.session_state.hamburger_open = not st.session_state.hamburger_open
-            st.markdown('</div>', unsafe_allow_html=True)
+        with st.sidebar:
+            if not df_all.empty:
+                df_all["bulan"] = pd.to_datetime(df_all["tanggal"]).dt.strftime("%B %Y")
+                fk = st.selectbox("Kelas",   sorted(df_all["kelas"].unique()))
+                fj = st.selectbox("Jurusan", sorted(df_all["jurusan"].unique()))
+                fb = st.selectbox("Bulan",   sorted(df_all["bulan"].unique()))
 
-        # === PANEL FILTER DENGAN WARNA #2D303E ===
-        if st.session_state.hamburger_open:
-            with st.container():
-                st.markdown('<div class="sidebar-menu-user">', unsafe_allow_html=True)
-                st.markdown('<div class="user-info-text">🔍 Filter Data Kas</div>', unsafe_allow_html=True)
+            sidebar_sep()
+            sidebar_user("User Publik")
+            st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+            if st.button("Keluar", use_container_width=True):
+                st.session_state.clear()
+                st.rerun()
 
-                if not df_all.empty:
-                    df_all["bulan"] = pd.to_datetime(df_all["tanggal"]).dt.strftime("%B %Y")
-                    fk = st.selectbox("Kelas",   sorted(df_all["kelas"].unique()), key="user_kelas")
-                    fj = st.selectbox("Jurusan", sorted(df_all["jurusan"].unique()), key="user_jurusan")
-                    fb = st.selectbox("Bulan",   sorted(df_all["bulan"].unique()), key="user_bulan")
-                else:
-                    fk = fj = fb = None
-                    st.info("Belum ada data.")
-
-                st.markdown('<hr>', unsafe_allow_html=True)
-                st.markdown('<div style="display: flex; align-items: center; gap: 8px; color: #B0B5C6;">', unsafe_allow_html=True)
-                st.markdown('👤 User Publik', unsafe_allow_html=True)
-                st.markdown('</div>', unsafe_allow_html=True)
-
-                if st.button("Keluar", key="user_logout", use_container_width=True):
-                    st.session_state.clear()
-                    st.rerun()
-
-                st.markdown('</div>', unsafe_allow_html=True)
+        page_header("Data kas kelas", "Lihat rekap pembayaran kas")
 
         if df_all.empty:
             st.info("Belum ada data kas yang tersedia.")
         else:
-            if not st.session_state.hamburger_open:
-                # fallback filter jika menu tertutup (gunakan default pertama)
-                df_all["bulan"] = pd.to_datetime(df_all["tanggal"]).dt.strftime("%B %Y")
-                fk = sorted(df_all["kelas"].unique())[0]
-                fj = sorted(df_all["jurusan"].unique())[0]
-                fb = sorted(df_all["bulan"].unique())[0]
-
+            df_all["bulan"] = pd.to_datetime(df_all["tanggal"]).dt.strftime("%B %Y")
             df = df_all[
                 (df_all["kelas"] == fk) &
                 (df_all["jurusan"] == fj) &
@@ -754,4 +669,284 @@ else:
         else:
             st.markdown(
                 "<div style='font-size:14px;font-weight:500;color:#01023B;margin-bottom:.75rem;'>"
-                "
+                "Semua data kas</div>", unsafe_allow_html=True
+            )
+            if df_kas.empty:
+                st.info("Belum ada data kas.")
+            else:
+                st.dataframe(df_kas, use_container_width=True, hide_index=True)
+                st.download_button(
+                    "⬇  Download PDF kas",
+                    generate_pdf(df_kas, "Semua Data Kas"),
+                    "kas_all.pdf", mime="application/pdf"
+                )
+
+    # ==================== ADMIN ====================
+    elif st.session_state.role == "admin":
+
+        kls = st.session_state.kelas
+        jrs = st.session_state.jurusan
+
+        with st.sidebar:
+            render_logo_sidebar()
+            render_class_chip(kls, jrs)
+            sidebar_label("Navigasi")
+
+            if st.button("📊  Dashboard",   use_container_width=True):
+                st.session_state.menu = "dashboard"
+                st.rerun()
+            if st.button("💸  Pengeluaran", use_container_width=True):
+                st.session_state.menu = "pengeluaran"
+                st.rerun()
+            if st.button("👤  Per Siswa",   use_container_width=True):
+                st.session_state.menu = "siswa"
+                st.rerun()
+
+            sidebar_sep()
+            sidebar_label("Lainnya")
+
+            if st.button("🗑️  Hapus Data",  use_container_width=True):
+                st.session_state.menu = "hapus"
+                st.rerun()
+
+            st.markdown("<div style='height:32px'></div>", unsafe_allow_html=True)
+            sidebar_sep()
+            sidebar_user(f"Admin · {jrs}")
+            st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
+            if st.button("Keluar", use_container_width=True):
+                st.session_state.clear()
+                st.rerun()
+
+        # ---- load data ----
+        df = pd.read_sql(
+            "SELECT * FROM kas WHERE kelas=? AND jurusan=?", conn,
+            params=(kls, jrs)
+        )
+        if not df.empty:
+            df["tanggal"] = pd.to_datetime(df["tanggal"]).dt.strftime("%Y-%m-%d")
+
+        # ==================== DASHBOARD ====================
+        if st.session_state.menu == "dashboard":
+
+            page_header("Dashboard kas", f"Kelas {kls} · {jrs}")
+
+            total_kas = df["nominal"].sum() if not df.empty else 0
+            tepat     = len(df[df["status"] == "Tepat Waktu"]) if not df.empty else 0
+            telat     = len(df[df["status"] == "Telat"])       if not df.empty else 0
+
+            m1, m2, m3 = st.columns(3)
+            m1.metric("Total kas masuk", format_rupiah(total_kas))
+            m2.metric("Tepat waktu",     f"{tepat} siswa")
+            m3.metric("Telat bayar",     f"{telat} siswa")
+
+            st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+
+            with st.expander("➕  Input pembayaran baru"):
+                c1, c2 = st.columns(2)
+                with c1:
+                    nama   = st.text_input("Nama siswa", placeholder="Nama lengkap")
+                    status = st.selectbox("Status", ["Tepat Waktu", "Telat"])
+                with c2:
+                    tgl = st.date_input("Tanggal")
+                    nom = st.text_input("Nominal", placeholder="Contoh: 25000")
+                ket = st.text_input("Keterangan", placeholder="Kas bulan April...")
+
+                if st.button("Simpan pembayaran", type="primary"):
+                    if not nama.strip():
+                        st.warning("Nama siswa tidak boleh kosong.")
+                    else:
+                        cursor.execute(
+                            "INSERT INTO kas VALUES (NULL,?,?,?,?,?,?,?)",
+                            (nama.strip(), tgl.strftime("%Y-%m-%d"), status,
+                             kls, jrs, ket, clean_nominal(nom))
+                        )
+                        conn.commit()
+                        st.success(f"Pembayaran {nama.strip()} berhasil disimpan.")
+                        st.rerun()
+
+            hdivider()
+
+            if df.empty:
+                st.info("Belum ada data kas untuk kelas ini.")
+            else:
+                tab1, tab2 = st.tabs(["📋  Data kas", "📊  Statistik"])
+
+                with tab1:
+                    st.dataframe(df, use_container_width=True, hide_index=True)
+                    st.download_button(
+                        "⬇  Download PDF kas",
+                        generate_pdf(df, f"Laporan Kas Kelas {kls} {jrs}"),
+                        f"kas_{kls}_{jrs}.pdf", mime="application/pdf"
+                    )
+                with tab2:
+                    c1, c2 = st.columns(2)
+                    with c1:
+                        st.markdown("**Status pembayaran**")
+                        st.bar_chart(df["status"].value_counts())
+                    with c2:
+                        st.markdown("**Nominal per siswa**")
+                        st.bar_chart(df.set_index("nama")["nominal"])
+
+        # ==================== PENGELUARAN ====================
+        elif st.session_state.menu == "pengeluaran":
+
+            page_header("Pengeluaran", f"Kelas {kls} · {jrs}")
+
+            with st.expander("➕  Input pengeluaran baru"):
+                c1, c2 = st.columns(2)
+                with c1:
+                    tgl_k = st.date_input("Tanggal", key="tgl_keluar")
+                with c2:
+                    nom_k = st.text_input("Nominal", placeholder="Contoh: 100000", key="nom_keluar")
+                ket_k = st.text_input("Keterangan", placeholder="Pembelian ATK...", key="ket_keluar")
+
+                if st.button("Simpan pengeluaran", type="primary", key="save_keluar"):
+                    if not ket_k.strip():
+                        st.warning("Keterangan tidak boleh kosong.")
+                    else:
+                        cursor.execute(
+                            "INSERT INTO pengeluaran VALUES (NULL,?,?,?,?,?)",
+                            (tgl_k.strftime("%Y-%m-%d"), kls, jrs, ket_k, clean_nominal(nom_k))
+                        )
+                        conn.commit()
+                        st.success("Pengeluaran berhasil disimpan.")
+                        st.rerun()
+
+            df_keluar = pd.read_sql(
+                "SELECT * FROM pengeluaran WHERE kelas=? AND jurusan=?", conn,
+                params=(kls, jrs)
+            )
+            df_masuk = pd.read_sql(
+                "SELECT nominal FROM kas WHERE kelas=? AND jurusan=?", conn,
+                params=(kls, jrs)
+            )
+
+            total_masuk  = df_masuk["nominal"].sum()  if not df_masuk.empty  else 0
+            total_keluar = df_keluar["nominal"].sum()  if not df_keluar.empty else 0
+            saldo        = total_masuk - total_keluar
+
+            hdivider()
+
+            m1, m2, m3 = st.columns(3)
+            m1.metric("Total kas masuk",   format_rupiah(total_masuk))
+            m2.metric("Total pengeluaran", format_rupiah(total_keluar))
+            m3.metric("Saldo tersisa",     format_rupiah(saldo))
+
+            st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+
+            if df_keluar.empty:
+                st.info("Belum ada data pengeluaran.")
+            else:
+                df_keluar["tanggal"] = pd.to_datetime(df_keluar["tanggal"]).dt.strftime("%Y-%m-%d")
+                st.dataframe(df_keluar, use_container_width=True, hide_index=True)
+                st.download_button(
+                    "⬇  Download PDF pengeluaran",
+                    generate_pdf(df_keluar, f"Laporan Pengeluaran Kelas {kls} {jrs}"),
+                    f"pengeluaran_{kls}_{jrs}.pdf", mime="application/pdf"
+                )
+
+        # ==================== PER SISWA ====================
+        elif st.session_state.menu == "siswa":
+
+            page_header("Statistik per siswa", f"Kelas {kls} · {jrs}")
+
+            if df.empty:
+                st.info("Belum ada data siswa.")
+            else:
+                c1, c2 = st.columns([2, 1])
+                with c1:
+                    siswa = st.selectbox("Pilih siswa", sorted(df["nama"].unique()))
+                with c2:
+                    st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
+                    cek = st.button("Lihat statistik", type="primary", use_container_width=True)
+
+                if cek:
+                    data_siswa = df[df["nama"] == siswa]
+                    hasil      = data_siswa["status"].value_counts()
+                    total      = len(data_siswa)
+                    telat      = len(data_siswa[data_siswa["status"] == "Telat"])
+                    persen     = (telat / total * 100) if total > 0 else 0
+
+                    hdivider()
+
+                    ca, cb, cc, cd = st.columns(4)
+                    ca.metric("Total pembayaran", f"{total}x")
+                    cb.metric("Tepat waktu",      f"{total - telat}x")
+                    cc.metric("Telat",            f"{telat}x")
+                    cd.metric("Persentase telat", f"{persen:.0f}%")
+
+                    st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+                    st.markdown("**Grafik status pembayaran**")
+                    st.bar_chart(hasil)
+
+                    if persen < 20:
+                        st.success("Performa sangat baik")
+                    elif persen < 50:
+                        st.warning("Perlu peningkatan")
+                    else:
+                        st.error("Sering telat — perlu tindak lanjut")
+
+        # ==================== HAPUS DATA ====================
+        elif st.session_state.menu == "hapus":
+
+            page_header("Hapus data", f"Kelas {kls} · {jrs}")
+
+            st.markdown("""
+            <div style="background:#FFF7F0;border:1px solid #FECBA1;border-radius:10px;
+                        padding:10px 14px;font-size:13px;color:#92400E;margin-bottom:1rem;">
+                Tindakan hapus bersifat permanen dan tidak bisa dibatalkan.
+            </div>
+            """, unsafe_allow_html=True)
+
+            konfirmasi = st.checkbox("Saya memahami risiko dan ingin melanjutkan")
+            hdivider()
+
+            c1, c2, c3 = st.columns(3)
+
+            with c1:
+                st.markdown("**Hapus berdasarkan ID**")
+                id_hapus = st.number_input("ID data", min_value=1, step=1, key="id_hp")
+                if st.button("Hapus ID ini", key="btn_hid", type="primary"):
+                    if konfirmasi:
+                        cursor.execute("DELETE FROM kas WHERE id=?", (int(id_hapus),))
+                        conn.commit()
+                        st.success(f"ID {int(id_hapus)} dihapus.")
+                        st.rerun()
+                    else:
+                        st.error("Centang konfirmasi terlebih dahulu.")
+
+            with c2:
+                st.markdown("**Hapus data siswa**")
+                if not df.empty:
+                    siswa_del = st.selectbox("Pilih siswa", df["nama"].unique(), key="siswa_del")
+                    if st.button("Hapus siswa ini", key="btn_hsiswa", type="primary"):
+                        if konfirmasi:
+                            cursor.execute("DELETE FROM kas WHERE nama=?", (siswa_del,))
+                            conn.commit()
+                            st.success(f"Data {siswa_del} dihapus.")
+                            st.rerun()
+                        else:
+                            st.error("Centang konfirmasi terlebih dahulu.")
+
+            with c3:
+                st.markdown("**Hapus semua data kelas**")
+                st.caption(f"Seluruh data kelas {kls} {jrs} akan dihapus.")
+                if st.button("Hapus semua", key="btn_hall", type="primary"):
+                    if konfirmasi:
+                        cursor.execute(
+                            "DELETE FROM kas WHERE kelas=? AND jurusan=?", (kls, jrs)
+                        )
+                        conn.commit()
+                        st.success("Semua data kelas berhasil dihapus.")
+                        st.rerun()
+                    else:
+                        st.error("Centang konfirmasi terlebih dahulu.")
+
+# ======================
+# FOOTER
+# ======================
+st.markdown("""
+<div style="text-align:center;padding:2rem 0 0.5rem;">
+    <span style="font-size:11px;color:#B0BEC5;">© KasKita 2026</span>
+</div>
+""", unsafe_allow_html=True)
