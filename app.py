@@ -18,7 +18,7 @@ st.set_page_config(
 )
 
 # ======================
-# CUSTOM CSS — Navy #01023B + Green #09F289
+# CUSTOM CSS — Navy #2D303E + Green #09F289
 # ======================
 st.markdown("""
 <style>
@@ -85,7 +85,7 @@ div:not(section[data-testid="stSidebar"]) .stButton > button {
     border-radius: 8px !important;
     border: 1px solid #D1FAE5 !important;
     background: #FFFFFF !important;
-    color: #01023B !important;
+    color: #2D303E !important;
     font-size: 13px !important;
     font-weight: 400 !important;
     padding: 6px 14px !important;
@@ -97,7 +97,7 @@ div:not(section[data-testid="stSidebar"]) .stButton > button:hover {
 }
 div:not(section[data-testid="stSidebar"]) .stButton > button[kind="primary"] {
     background: #09F289 !important;
-    color: #01023B !important;
+    color: #2D303E !important;
     border: none !important;
     font-weight: 500 !important;
 }
@@ -122,7 +122,7 @@ div:not(section[data-testid="stSidebar"]) .stButton > button[kind="primary"]:hov
 [data-testid="stMetricValue"] {
     font-size: 22px !important;
     font-weight: 500 !important;
-    color: #01023B !important;
+    color: #2D303E !important;
 }
 
 /* ── Inputs & selects (main area) ── */
@@ -134,7 +134,7 @@ div:not(section[data-testid="stSidebar"]) .stSelectbox > div > div {
     border: 1px solid #D1FAE5 !important;
     background: #FAFFFE !important;
     font-size: 13px !important;
-    color: #01023B !important;
+    color: #2D303E !important;
 }
 div:not(section[data-testid="stSidebar"]) .stTextInput > div > div > input:focus {
     border-color: #09F289 !important;
@@ -155,7 +155,7 @@ div:not(section[data-testid="stSidebar"]) .stTextInput > div > div > input:focus
     padding: 8px 16px;
 }
 .stTabs [aria-selected="true"] {
-    color: #01023B !important;
+    color: #2D303E !important;
     border-bottom: 2px solid #09F289 !important;
     background: transparent !important;
     font-weight: 500;
@@ -167,7 +167,7 @@ div:not(section[data-testid="stSidebar"]) .stTextInput > div > div > input:focus
     border: 1px solid #D1FAE5 !important;
     border-radius: 10px !important;
     font-size: 13px !important;
-    color: #01023B !important;
+    color: #2D303E !important;
     font-weight: 400 !important;
 }
 .streamlit-expanderContent {
@@ -209,14 +209,14 @@ div:not(section[data-testid="stSidebar"]) .stTextInput > div > div > input:focus
     background: #E6FDF5 !important;
     border: 1px solid #D1FAE5 !important;
     border-radius: 10px !important;
-    color: #01023B !important;
+    color: #2D303E !important;
     font-size: 13px !important;
 }
 
 /* ── Checkbox ── */
 .stCheckbox > label {
     font-size: 13px !important;
-    color: #01023B !important;
+    color: #2D303E !important;
 }
 
 /* ── Radio (sidebar) ── */
@@ -241,7 +241,7 @@ div:not(section[data-testid="stSidebar"]) .stTextInput > div > div > input:focus
     border-radius: 8px !important;
     border: 1px solid #D1FAE5 !important;
     background: #FFFFFF !important;
-    color: #01023B !important;
+    color: #2D303E !important;
     font-size: 13px !important;
 }
 .stDownloadButton > button:hover {
@@ -752,4 +752,5 @@ else:
                 ket = st.text_input("Keterangan", placeholder="Kas bulan April...")
 
                 if st.button("Simpan pembayaran", type="primary"):
-                    if not
+                    if not nama.strip():
+                        st.warning("Nama siswa tidak boleh kosong.")
