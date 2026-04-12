@@ -784,3 +784,7 @@ else:
             sidebar_label("Navigasi")
 
             if st.button("📊  Dashboard",   use_container_width=True):
+                st.session_state.menu = "dashboard"
+                st.rerun()
+            if st.button("💸  Pengeluaran", use_container_width=True):
+                st.session_state.menu = "
