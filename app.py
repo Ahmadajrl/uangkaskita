@@ -54,12 +54,12 @@ section[data-testid="stSidebar"] label {
 section[data-testid="stSidebar"] .stSelectbox > div > div {
     background: rgba(9,242,137,0.08) !important;
     border-color: rgba(9,242,137,0.2) !important;
-    color: #1A1C24 !important;
+    color: #FFFFFF !important;
 }
 section[data-testid="stSidebar"] input {
-    background: rgba(9,242,137,0.08) !important;
+    background: rgba(26,28,36,1) !important;
     border-color: rgba(9,242,137,0.2) !important;
-    color: #1A1C24 !important;
+    color: #FFFFFF !important;
 }
 
 /* ── Sidebar buttons ── */
@@ -67,7 +67,7 @@ section[data-testid="stSidebar"] .stButton > button {
     width: 100%;
     text-align: left;
     border: none !important;
-    background: transparent !important;
+    background: rgba(26,28,36,1) !important;
     color: rgba(255,255,255,0.55) !important;
     border-radius: 8px !important;
     padding: 8px 12px !important;
@@ -76,8 +76,8 @@ section[data-testid="stSidebar"] .stButton > button {
     transition: all 0.15s;
 }
 section[data-testid="stSidebar"] .stButton > button:hover {
-    background: rgba(9,242,137,0.1) !important;
-    color: rgba(255,255,255,0.9) !important;
+    background: ##2D303E !important;
+    color: #09F289 !important;
 }
 
 /* ── Main area buttons ── */
@@ -364,10 +364,10 @@ def render_logo_sidebar():
 
 def render_class_chip(kls, jrs):
     st.markdown(f"""
-    <div style="background:rgba(26,28,36,1);border:1px solid rgba(9,242,137,0.22);
-                border-radius:8px;padding:8px 10px;margin-bottom:1rem;">
-        <div style="font-size:10px;color:#09F289;font-weight:500;letter-spacing:.04em;">SESI AKTIF</div>
-        <div style="font-size:12px;color:rgba(255,255,255,0.75);margin-top:2px;">
+    <div style="background:#1A1C24; border:1px solid rgba(9,242,137,0.22);
+                border-radius:8px; padding:8px 10px; margin-bottom:1rem;">
+        <div style="font-size:10px; color:#09F289; font-weight:500;">SESI AKTIF</div>
+        <div style="font-size:12px; color:#FFFFFF; margin-top:2px;">
             Kelas {kls} &nbsp;·&nbsp; {jrs}
         </div>
     </div>
@@ -388,20 +388,22 @@ def sidebar_sep():
 def sidebar_user(label):
     initial = label[0].upper() if label else "U"
     st.markdown(f"""
-    <div style="background:rgba(9,242,137,0.07);border-radius:8px;
-                padding:8px 10px;display:flex;align-items:center;gap:8px;">
-        <div style="width:26px;height:26px;border-radius:50%;background:rgba(9,242,137,0.18);
-                    display:flex;align-items:center;justify-content:center;
-                    font-size:10px;color:#09F289;font-weight:500;flex-shrink:0;">{initial}</div>
-        <div style="font-size:11px;color:rgba(255,255,255,0.6);">{label}</div>
+    <div style="background:#1A1C24; border-radius:8px;
+                padding:8px 10px; display:flex; align-items:center; gap:8px;">
+        <div style="width:26px; height:26px; border-radius:50%; background:rgba(9,242,137,0.18);
+                    display:flex; align-items:center; justify-content:center;
+                    font-size:10px; color:#09F289; font-weight:500;">{initial}</div>
+        <div style="font-size:11px; color:#FFFFFF;">{label}</div>
     </div>
     """, unsafe_allow_html=True)
-
-def info_badge_sidebar(text, color="#09F289", bg="rgba(26,28,36,1)"):
+    
+def info_badge_sidebar(text, color="#09F289", bg="#1A1C24"):
     st.markdown(f"""
-    <div style="display:inline-block;background:{bg};color:{color};
-                font-size:11px;padding:3px 10px;border-radius:20px;
-                font-weight:500;margin-bottom:0.5rem;">{text}</div>
+    <div style="display:inline-block; background:{bg}; color:{color};
+                font-size:11px; padding:3px 10px; border-radius:20px;
+                font-weight:500; margin-bottom:0.5rem; border:1px solid rgba(255,255,255,0.1);">
+        {text}
+    </div>
     """, unsafe_allow_html=True)
 
 def page_header(title, subtitle=None):
