@@ -132,7 +132,7 @@ div:not(section[data-testid="stSidebar"]) .stNumberInput > div > div > input,
 div:not(section[data-testid="stSidebar"]) .stSelectbox > div > div {
     border-radius: 8px !important;
     border: 1px solid #D1FAE5 !important;
-    background: #FAFFFE !important;
+    background: #09F289 !important;
     font-size: 13px !important;
     color: #01023B !important;
 }
