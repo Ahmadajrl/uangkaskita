@@ -25,7 +25,7 @@ st.markdown("""
 /* ---- Global ---- */
 [data-testid="stAppViewContainer"] { background: #F8F7F5; }
 [data-testid="stSidebar"] {
-    background: #FFFFFF;
+    background: #01023B;
     border-right: 1px solid #E8E7E0;
 }
 [data-testid="stSidebar"] > div { padding-top: 1rem; }
