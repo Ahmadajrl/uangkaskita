@@ -18,7 +18,7 @@ st.set_page_config(
 )
 
 # ======================
-# CUSTOM CSS — Navy #2D303E + Green #09F289
+# CUSTOM CSS — Navy #01023B + Green #09F289
 # ======================
 st.markdown("""
 <style>
@@ -27,7 +27,7 @@ st.markdown("""
     background: #F3FDF9;
 }
 [data-testid="stSidebar"] {
-    background: #2D303E !important;
+    background: #01023B !important;
     border-right: none;
 }
 [data-testid="stSidebar"] > div:first-child {
@@ -37,47 +37,6 @@ st.markdown("""
 /* ── Hide chrome ── */
 #MainMenu, footer, header { visibility: hidden; }
 [data-testid="stDecoration"] { display: none; }
-
-/* ── Hamburger Menu Toggle ── */
-.hamburger-toggle {
-    position: fixed;
-    top: 15px;
-    left: 15px;
-    z-index: 999999;
-    cursor: pointer;
-    width: 40px;
-    height: 40px;
-    background: #2D303E;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid rgba(9,242,137,0.3);
-    transition: all 0.3s ease;
-}
-.hamburger-toggle:hover {
-    background: #3D4050;
-    border-color: #09F289;
-}
-.hamburger-toggle svg {
-    width: 22px;
-    height: 22px;
-}
-.hamburger-toggle .line {
-    fill: none;
-    stroke: #09F289;
-    stroke-width: 2.5;
-    stroke-linecap: round;
-    transition: all 0.3s ease;
-}
-.hamburger-toggle:hover .line {
-    stroke: #09F289;
-}
-
-/* Hide default collapse button */
-button[kind="header"] {
-    display: none !important;
-}
 
 /* ── Sidebar text overrides ── */
 section[data-testid="stSidebar"] * {
@@ -126,7 +85,7 @@ div:not(section[data-testid="stSidebar"]) .stButton > button {
     border-radius: 8px !important;
     border: 1px solid #D1FAE5 !important;
     background: #FFFFFF !important;
-    color: #2D303E !important;
+    color: #01023B !important;
     font-size: 13px !important;
     font-weight: 400 !important;
     padding: 6px 14px !important;
@@ -138,7 +97,7 @@ div:not(section[data-testid="stSidebar"]) .stButton > button:hover {
 }
 div:not(section[data-testid="stSidebar"]) .stButton > button[kind="primary"] {
     background: #09F289 !important;
-    color: #2D303E !important;
+    color: #01023B !important;
     border: none !important;
     font-weight: 500 !important;
 }
@@ -163,7 +122,7 @@ div:not(section[data-testid="stSidebar"]) .stButton > button[kind="primary"]:hov
 [data-testid="stMetricValue"] {
     font-size: 22px !important;
     font-weight: 500 !important;
-    color: #2D303E !important;
+    color: #01023B !important;
 }
 
 /* ── Inputs & selects (main area) ── */
@@ -175,7 +134,7 @@ div:not(section[data-testid="stSidebar"]) .stSelectbox > div > div {
     border: 1px solid #D1FAE5 !important;
     background: #FAFFFE !important;
     font-size: 13px !important;
-    color: #2D303E !important;
+    color: #01023B !important;
 }
 div:not(section[data-testid="stSidebar"]) .stTextInput > div > div > input:focus {
     border-color: #09F289 !important;
@@ -196,7 +155,7 @@ div:not(section[data-testid="stSidebar"]) .stTextInput > div > div > input:focus
     padding: 8px 16px;
 }
 .stTabs [aria-selected="true"] {
-    color: #2D303E !important;
+    color: #01023B !important;
     border-bottom: 2px solid #09F289 !important;
     background: transparent !important;
     font-weight: 500;
@@ -208,7 +167,7 @@ div:not(section[data-testid="stSidebar"]) .stTextInput > div > div > input:focus
     border: 1px solid #D1FAE5 !important;
     border-radius: 10px !important;
     font-size: 13px !important;
-    color: #2D303E !important;
+    color: #01023B !important;
     font-weight: 400 !important;
 }
 .streamlit-expanderContent {
@@ -250,14 +209,14 @@ div:not(section[data-testid="stSidebar"]) .stTextInput > div > div > input:focus
     background: #E6FDF5 !important;
     border: 1px solid #D1FAE5 !important;
     border-radius: 10px !important;
-    color: #2D303E !important;
+    color: #01023B !important;
     font-size: 13px !important;
 }
 
 /* ── Checkbox ── */
 .stCheckbox > label {
     font-size: 13px !important;
-    color: #2D303E !important;
+    color: #01023B !important;
 }
 
 /* ── Radio (sidebar) ── */
@@ -282,7 +241,7 @@ div:not(section[data-testid="stSidebar"]) .stTextInput > div > div > input:focus
     border-radius: 8px !important;
     border: 1px solid #D1FAE5 !important;
     background: #FFFFFF !important;
-    color: #2D303E !important;
+    color: #01023B !important;
     font-size: 13px !important;
 }
 .stDownloadButton > button:hover {
@@ -293,56 +252,6 @@ div:not(section[data-testid="stSidebar"]) .stTextInput > div > div > input:focus
 /* ── Divider ── */
 hr { border-color: #D1FAE5 !important; }
 </style>
-""", unsafe_allow_html=True)
-
-# ======================
-# HAMBURGER MENU SCRIPT
-# ======================
-st.markdown("""
-<script>
-(function() {
-    function createHamburger() {
-        if (document.getElementById('custom-hamburger')) return;
-        
-        const hamburger = document.createElement('div');
-        hamburger.id = 'custom-hamburger';
-        hamburger.className = 'hamburger-toggle';
-        hamburger.innerHTML = `
-            <svg viewBox="0 0 24 24">
-                <line class="line" x1="3" y1="6" x2="21" y2="6" />
-                <line class="line" x1="3" y1="12" x2="21" y2="12" />
-                <line class="line" x1="3" y1="18" x2="21" y2="18" />
-            </svg>
-        `;
-        
-        hamburger.addEventListener('click', function() {
-            const sidebar = document.querySelector('[data-testid="stSidebar"]');
-            const closeButton = sidebar?.querySelector('button[kind="header"]');
-            
-            if (closeButton) {
-                closeButton.click();
-            }
-        });
-        
-        document.body.appendChild(hamburger);
-    }
-    
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', createHamburger);
-    } else {
-        createHamburger();
-    }
-    
-    let lastUrl = location.href;
-    new MutationObserver(() => {
-        const url = location.href;
-        if (url !== lastUrl) {
-            lastUrl = url;
-            setTimeout(createHamburger, 500);
-        }
-    }).observe(document, {subtree: true, childList: true});
-})();
-</script>
 """, unsafe_allow_html=True)
 
 DEV_USER = "developer"
@@ -375,7 +284,7 @@ def generate_pdf(df, title="Laporan KasKita"):
     data = [df.columns.tolist()] + df.values.tolist()
     t = Table(data, repeatRows=1)
     t.setStyle(TableStyle([
-        ("BACKGROUND",    (0, 0), (-1, 0),  colors.HexColor("#2D303E")),
+        ("BACKGROUND",    (0, 0), (-1, 0),  colors.HexColor("#01023B")),
         ("TEXTCOLOR",     (0, 0), (-1, 0),  colors.HexColor("#09F289")),
         ("FONTSIZE",      (0, 0), (-1, 0),  10),
         ("FONTNAME",      (0, 0), (-1, 0),  "Helvetica-Bold"),
@@ -384,7 +293,7 @@ def generate_pdf(df, title="Laporan KasKita"):
         ("FONTSIZE",      (0, 1), (-1, -1), 9),
         ("PADDING",       (0, 0), (-1, -1), 6),
         ("ALIGN",         (0, 0), (-1, -1), "LEFT"),
-        ("TEXTCOLOR",     (0, 1), (-1, -1), colors.HexColor("#2D303E")),
+        ("TEXTCOLOR",     (0, 1), (-1, -1), colors.HexColor("#01023B")),
     ]))
     elements.append(t)
     elements.append(Spacer(1, 16))
@@ -440,9 +349,9 @@ def render_logo_sidebar():
         <div style="width:34px;height:34px;background:#09F289;border-radius:9px;
                     display:flex;align-items:center;justify-content:center;flex-shrink:0;">
             <svg width="19" height="19" viewBox="0 0 22 22" fill="none">
-                <rect x="2" y="6" width="18" height="11" rx="2.5" stroke="#2D303E" stroke-width="1.7"/>
-                <path d="M2 9.5h18" stroke="#2D303E" stroke-width="1.7"/>
-                <rect x="4.5" y="12" width="6" height="2" rx="0.6" fill="#2D303E"/>
+                <rect x="2" y="6" width="18" height="11" rx="2.5" stroke="#01023B" stroke-width="1.7"/>
+                <path d="M2 9.5h18" stroke="#01023B" stroke-width="1.7"/>
+                <rect x="4.5" y="12" width="6" height="2" rx="0.6" fill="#01023B"/>
             </svg>
         </div>
         <div>
@@ -497,7 +406,7 @@ def info_badge_sidebar(text, color="#09F289", bg="rgba(9,242,137,0.12)"):
 
 def page_header(title, subtitle=None):
     st.markdown(
-        f"<h2 style='font-size:20px;font-weight:500;color:#2D303E;margin:0;'>{title}</h2>",
+        f"<h2 style='font-size:20px;font-weight:500;color:#01023B;margin:0;'>{title}</h2>",
         unsafe_allow_html=True
     )
     if subtitle:
@@ -522,7 +431,7 @@ if not st.session_state.login and st.session_state.page == "role":
     st.markdown("""
     <div style="text-align:center;padding:2.5rem 0 1rem;">
         <div style="display:inline-flex;align-items:center;gap:12px;margin-bottom:8px;">
-            <div style="width:48px;height:48px;background:#2D303E;border-radius:12px;
+            <div style="width:48px;height:48px;background:#01023B;border-radius:12px;
                         display:flex;align-items:center;justify-content:center;">
                 <svg width="26" height="26" viewBox="0 0 22 22" fill="none">
                     <rect x="2" y="6" width="18" height="11" rx="2.5" stroke="#09F289" stroke-width="1.7"/>
@@ -531,7 +440,7 @@ if not st.session_state.login and st.session_state.page == "role":
                 </svg>
             </div>
             <div style="text-align:left;">
-                <div style="font-size:28px;font-weight:700;color:#2D303E;line-height:1.1;">KasKita</div>
+                <div style="font-size:28px;font-weight:700;color:#01023B;line-height:1.1;">KasKita</div>
                 <div style="font-size:12px;color:#6B7280;">Manajemen kas kelas digital</div>
             </div>
         </div>
@@ -548,12 +457,12 @@ if not st.session_state.login and st.session_state.page == "role":
             <div style="width:48px;height:48px;background:#E6FDF5;border-radius:12px;
                         display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                    <circle cx="12" cy="8" r="4" stroke="#2D303E" stroke-width="1.6"/>
-                    <path d="M4 20c0-4 3.582-7 8-7s8 3 8 7" stroke="#2D303E"
+                    <circle cx="12" cy="8" r="4" stroke="#01023B" stroke-width="1.6"/>
+                    <path d="M4 20c0-4 3.582-7 8-7s8 3 8 7" stroke="#01023B"
                           stroke-width="1.6" stroke-linecap="round"/>
                 </svg>
             </div>
-            <div style="font-size:15px;font-weight:500;color:#2D303E;">Admin</div>
+            <div style="font-size:15px;font-weight:500;color:#01023B;">Admin</div>
             <div style="font-size:11px;color:#6B7280;margin-top:4px;">Kelola kas kelas</div>
         </div>
         """, unsafe_allow_html=True)
@@ -569,11 +478,11 @@ if not st.session_state.login and st.session_state.page == "role":
             <div style="width:48px;height:48px;background:#E6FDF5;border-radius:12px;
                         display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                    <path d="M4 6h16M4 10h16M4 14h10" stroke="#2D303E"
+                    <path d="M4 6h16M4 10h16M4 14h10" stroke="#01023B"
                           stroke-width="1.6" stroke-linecap="round"/>
                 </svg>
             </div>
-            <div style="font-size:15px;font-weight:500;color:#2D303E;">User</div>
+            <div style="font-size:15px;font-weight:500;color:#01023B;">User</div>
             <div style="font-size:11px;color:#6B7280;margin-top:4px;">Lihat data kas</div>
         </div>
         """, unsafe_allow_html=True)
@@ -609,7 +518,7 @@ elif not st.session_state.login and st.session_state.page == "login":
 
     st.markdown("""
     <div style="text-align:center;padding:2rem 0 1.5rem;">
-        <div style="font-size:22px;font-weight:600;color:#2D303E;">Login Admin</div>
+        <div style="font-size:22px;font-weight:600;color:#01023B;">Login Admin</div>
         <div style="font-size:13px;color:#6B7280;margin-top:4px;">Masukkan detail akun kelas kamu</div>
     </div>
     """, unsafe_allow_html=True)
@@ -737,7 +646,7 @@ else:
 
         if menu_dev == "Akun Admin":
             st.markdown(
-                "<div style='font-size:14px;font-weight:500;color:#2D303E;margin-bottom:.75rem;'>"
+                "<div style='font-size:14px;font-weight:500;color:#01023B;margin-bottom:.75rem;'>"
                 "Daftar akun admin</div>", unsafe_allow_html=True
             )
             if df_admin.empty:
@@ -759,7 +668,7 @@ else:
                     st.rerun()
         else:
             st.markdown(
-                "<div style='font-size:14px;font-weight:500;color:#2D303E;margin-bottom:.75rem;'>"
+                "<div style='font-size:14px;font-weight:500;color:#01023B;margin-bottom:.75rem;'>"
                 "Semua data kas</div>", unsafe_allow_html=True
             )
             if df_kas.empty:
@@ -787,4 +696,257 @@ else:
                 st.session_state.menu = "dashboard"
                 st.rerun()
             if st.button("💸  Pengeluaran", use_container_width=True):
-                st.session_state.menu = "
+                st.session_state.menu = "pengeluaran"
+                st.rerun()
+            if st.button("👤  Per Siswa",   use_container_width=True):
+                st.session_state.menu = "siswa"
+                st.rerun()
+
+            sidebar_sep()
+            sidebar_label("Lainnya")
+
+            if st.button("🗑️  Hapus Data",  use_container_width=True):
+                st.session_state.menu = "hapus"
+                st.rerun()
+
+            st.markdown("<div style='height:32px'></div>", unsafe_allow_html=True)
+            sidebar_sep()
+            sidebar_user(f"Admin · {jrs}")
+            st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
+            if st.button("Keluar", use_container_width=True):
+                st.session_state.clear()
+                st.rerun()
+
+        # ---- load data ----
+        df = pd.read_sql(
+            "SELECT * FROM kas WHERE kelas=? AND jurusan=?", conn,
+            params=(kls, jrs)
+        )
+        if not df.empty:
+            df["tanggal"] = pd.to_datetime(df["tanggal"]).dt.strftime("%Y-%m-%d")
+
+        # ==================== DASHBOARD ====================
+        if st.session_state.menu == "dashboard":
+
+            page_header("Dashboard kas", f"Kelas {kls} · {jrs}")
+
+            total_kas = df["nominal"].sum() if not df.empty else 0
+            tepat     = len(df[df["status"] == "Tepat Waktu"]) if not df.empty else 0
+            telat     = len(df[df["status"] == "Telat"])       if not df.empty else 0
+
+            m1, m2, m3 = st.columns(3)
+            m1.metric("Total kas masuk", format_rupiah(total_kas))
+            m2.metric("Tepat waktu",     f"{tepat} siswa")
+            m3.metric("Telat bayar",     f"{telat} siswa")
+
+            st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+
+            with st.expander("➕  Input pembayaran baru"):
+                c1, c2 = st.columns(2)
+                with c1:
+                    nama   = st.text_input("Nama siswa", placeholder="Nama lengkap")
+                    status = st.selectbox("Status", ["Tepat Waktu", "Telat"])
+                with c2:
+                    tgl = st.date_input("Tanggal")
+                    nom = st.text_input("Nominal", placeholder="Contoh: 25000")
+                ket = st.text_input("Keterangan", placeholder="Kas bulan April...")
+
+                if st.button("Simpan pembayaran", type="primary"):
+                    if not nama.strip():
+                        st.warning("Nama siswa tidak boleh kosong.")
+                    else:
+                        cursor.execute(
+                            "INSERT INTO kas VALUES (NULL,?,?,?,?,?,?,?)",
+                            (nama.strip(), tgl.strftime("%Y-%m-%d"), status,
+                             kls, jrs, ket, clean_nominal(nom))
+                        )
+                        conn.commit()
+                        st.success(f"Pembayaran {nama.strip()} berhasil disimpan.")
+                        st.rerun()
+
+            hdivider()
+
+            if df.empty:
+                st.info("Belum ada data kas untuk kelas ini.")
+            else:
+                tab1, tab2 = st.tabs(["📋  Data kas", "📊  Statistik"])
+
+                with tab1:
+                    st.dataframe(df, use_container_width=True, hide_index=True)
+                    st.download_button(
+                        "⬇  Download PDF kas",
+                        generate_pdf(df, f"Laporan Kas Kelas {kls} {jrs}"),
+                        f"kas_{kls}_{jrs}.pdf", mime="application/pdf"
+                    )
+                with tab2:
+                    c1, c2 = st.columns(2)
+                    with c1:
+                        st.markdown("**Status pembayaran**")
+                        st.bar_chart(df["status"].value_counts())
+                    with c2:
+                        st.markdown("**Nominal per siswa**")
+                        st.bar_chart(df.set_index("nama")["nominal"])
+
+        # ==================== PENGELUARAN ====================
+        elif st.session_state.menu == "pengeluaran":
+
+            page_header("Pengeluaran", f"Kelas {kls} · {jrs}")
+
+            with st.expander("➕  Input pengeluaran baru"):
+                c1, c2 = st.columns(2)
+                with c1:
+                    tgl_k = st.date_input("Tanggal", key="tgl_keluar")
+                with c2:
+                    nom_k = st.text_input("Nominal", placeholder="Contoh: 100000", key="nom_keluar")
+                ket_k = st.text_input("Keterangan", placeholder="Pembelian ATK...", key="ket_keluar")
+
+                if st.button("Simpan pengeluaran", type="primary", key="save_keluar"):
+                    if not ket_k.strip():
+                        st.warning("Keterangan tidak boleh kosong.")
+                    else:
+                        cursor.execute(
+                            "INSERT INTO pengeluaran VALUES (NULL,?,?,?,?,?)",
+                            (tgl_k.strftime("%Y-%m-%d"), kls, jrs, ket_k, clean_nominal(nom_k))
+                        )
+                        conn.commit()
+                        st.success("Pengeluaran berhasil disimpan.")
+                        st.rerun()
+
+            df_keluar = pd.read_sql(
+                "SELECT * FROM pengeluaran WHERE kelas=? AND jurusan=?", conn,
+                params=(kls, jrs)
+            )
+            df_masuk = pd.read_sql(
+                "SELECT nominal FROM kas WHERE kelas=? AND jurusan=?", conn,
+                params=(kls, jrs)
+            )
+
+            total_masuk  = df_masuk["nominal"].sum()  if not df_masuk.empty  else 0
+            total_keluar = df_keluar["nominal"].sum()  if not df_keluar.empty else 0
+            saldo        = total_masuk - total_keluar
+
+            hdivider()
+
+            m1, m2, m3 = st.columns(3)
+            m1.metric("Total kas masuk",   format_rupiah(total_masuk))
+            m2.metric("Total pengeluaran", format_rupiah(total_keluar))
+            m3.metric("Saldo tersisa",     format_rupiah(saldo))
+
+            st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+
+            if df_keluar.empty:
+                st.info("Belum ada data pengeluaran.")
+            else:
+                df_keluar["tanggal"] = pd.to_datetime(df_keluar["tanggal"]).dt.strftime("%Y-%m-%d")
+                st.dataframe(df_keluar, use_container_width=True, hide_index=True)
+                st.download_button(
+                    "⬇  Download PDF pengeluaran",
+                    generate_pdf(df_keluar, f"Laporan Pengeluaran Kelas {kls} {jrs}"),
+                    f"pengeluaran_{kls}_{jrs}.pdf", mime="application/pdf"
+                )
+
+        # ==================== PER SISWA ====================
+        elif st.session_state.menu == "siswa":
+
+            page_header("Statistik per siswa", f"Kelas {kls} · {jrs}")
+
+            if df.empty:
+                st.info("Belum ada data siswa.")
+            else:
+                c1, c2 = st.columns([2, 1])
+                with c1:
+                    siswa = st.selectbox("Pilih siswa", sorted(df["nama"].unique()))
+                with c2:
+                    st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
+                    cek = st.button("Lihat statistik", type="primary", use_container_width=True)
+
+                if cek:
+                    data_siswa = df[df["nama"] == siswa]
+                    hasil      = data_siswa["status"].value_counts()
+                    total      = len(data_siswa)
+                    telat      = len(data_siswa[data_siswa["status"] == "Telat"])
+                    persen     = (telat / total * 100) if total > 0 else 0
+
+                    hdivider()
+
+                    ca, cb, cc, cd = st.columns(4)
+                    ca.metric("Total pembayaran", f"{total}x")
+                    cb.metric("Tepat waktu",      f"{total - telat}x")
+                    cc.metric("Telat",            f"{telat}x")
+                    cd.metric("Persentase telat", f"{persen:.0f}%")
+
+                    st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+                    st.markdown("**Grafik status pembayaran**")
+                    st.bar_chart(hasil)
+
+                    if persen < 20:
+                        st.success("Performa sangat baik")
+                    elif persen < 50:
+                        st.warning("Perlu peningkatan")
+                    else:
+                        st.error("Sering telat — perlu tindak lanjut")
+
+        # ==================== HAPUS DATA ====================
+        elif st.session_state.menu == "hapus":
+
+            page_header("Hapus data", f"Kelas {kls} · {jrs}")
+
+            st.markdown("""
+            <div style="background:#FFF7F0;border:1px solid #FECBA1;border-radius:10px;
+                        padding:10px 14px;font-size:13px;color:#92400E;margin-bottom:1rem;">
+                Tindakan hapus bersifat permanen dan tidak bisa dibatalkan.
+            </div>
+            """, unsafe_allow_html=True)
+
+            konfirmasi = st.checkbox("Saya memahami risiko dan ingin melanjutkan")
+            hdivider()
+
+            c1, c2, c3 = st.columns(3)
+
+            with c1:
+                st.markdown("**Hapus berdasarkan ID**")
+                id_hapus = st.number_input("ID data", min_value=1, step=1, key="id_hp")
+                if st.button("Hapus ID ini", key="btn_hid", type="primary"):
+                    if konfirmasi:
+                        cursor.execute("DELETE FROM kas WHERE id=?", (int(id_hapus),))
+                        conn.commit()
+                        st.success(f"ID {int(id_hapus)} dihapus.")
+                        st.rerun()
+                    else:
+                        st.error("Centang konfirmasi terlebih dahulu.")
+
+            with c2:
+                st.markdown("**Hapus data siswa**")
+                if not df.empty:
+                    siswa_del = st.selectbox("Pilih siswa", df["nama"].unique(), key="siswa_del")
+                    if st.button("Hapus siswa ini", key="btn_hsiswa", type="primary"):
+                        if konfirmasi:
+                            cursor.execute("DELETE FROM kas WHERE nama=?", (siswa_del,))
+                            conn.commit()
+                            st.success(f"Data {siswa_del} dihapus.")
+                            st.rerun()
+                        else:
+                            st.error("Centang konfirmasi terlebih dahulu.")
+
+            with c3:
+                st.markdown("**Hapus semua data kelas**")
+                st.caption(f"Seluruh data kelas {kls} {jrs} akan dihapus.")
+                if st.button("Hapus semua", key="btn_hall", type="primary"):
+                    if konfirmasi:
+                        cursor.execute(
+                            "DELETE FROM kas WHERE kelas=? AND jurusan=?", (kls, jrs)
+                        )
+                        conn.commit()
+                        st.success("Semua data kelas berhasil dihapus.")
+                        st.rerun()
+                    else:
+                        st.error("Centang konfirmasi terlebih dahulu.")
+
+# ======================
+# FOOTER
+# ======================
+st.markdown("""
+<div style="text-align:center;padding:2rem 0 0.5rem;">
+    <span style="font-size:11px;color:#B0BEC5;">© KasKita 2026</span>
+</div>
+""", unsafe_allow_html=True)
