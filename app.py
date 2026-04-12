@@ -45,7 +45,7 @@ section[data-testid="stSidebar"] * {
 section[data-testid="stSidebar"] h1,
 section[data-testid="stSidebar"] h2,
 section[data-testid="stSidebar"] h3 {
-    color: #01023B !important;
+    color: #FFFFFF !important;
 }
 section[data-testid="stSidebar"] label {
     color: rgba(255,255,255,0.45) !important;
@@ -54,12 +54,12 @@ section[data-testid="stSidebar"] label {
 section[data-testid="stSidebar"] .stSelectbox > div > div {
     background: rgba(9,242,137,0.08) !important;
     border-color: rgba(9,242,137,0.2) !important;
-    color: #01023B !important; /* ini warna font kelas jurusan dll */
+    color: #FFFFFF !important;
 }
 section[data-testid="stSidebar"] input {
     background: rgba(9,242,137,0.08) !important;
     border-color: rgba(9,242,137,0.2) !important;
-    color: #01023B !important;
+    color: #FFFFFF !important;
 }
 
 /* ── Sidebar buttons ── */
@@ -84,7 +84,7 @@ section[data-testid="stSidebar"] .stButton > button:hover {
 div:not(section[data-testid="stSidebar"]) .stButton > button {
     border-radius: 8px !important;
     border: 1px solid #D1FAE5 !important;
-    background: #01023B !important;
+    background: #FFFFFF !important;
     color: #01023B !important;
     font-size: 13px !important;
     font-weight: 400 !important;
@@ -131,7 +131,7 @@ div:not(section[data-testid="stSidebar"]) .stDateInput > div > div > input,
 div:not(section[data-testid="stSidebar"]) .stNumberInput > div > div > input,
 div:not(section[data-testid="stSidebar"]) .stSelectbox > div > div {
     border-radius: 8px !important;
-    border: 1px solid #01023B !important;
+    border: 1px solid #D1FAE5 !important;
     background: #09F289 !important;
     font-size: 13px !important;
     color: #01023B !important;
