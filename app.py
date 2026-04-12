@@ -38,6 +38,62 @@ st.markdown("""
 #MainMenu, footer, header { visibility: hidden; }
 [data-testid="stDecoration"] { display: none; }
 
+/* ── Hamburger Menu Toggle ── */
+.hamburger-toggle {
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    z-index: 999999;
+    cursor: pointer;
+    width: 40px;
+    height: 40px;
+    background: #2D303E;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(9,242,137,0.3);
+    transition: all 0.3s ease;
+}
+.hamburger-toggle:hover {
+    background: #3D4050;
+    border-color: #09F289;
+}
+.hamburger-toggle svg {
+    width: 22px;
+    height: 22px;
+}
+.hamburger-toggle .line {
+    fill: none;
+    stroke: #09F289;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    transition: all 0.3s ease;
+}
+.hamburger-toggle:hover .line {
+    stroke: #09F289;
+}
+
+/* Sidebar collapsed state */
+[data-testid="stSidebar"][aria-expanded="false"] {
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+}
+[data-testid="stSidebar"][aria-expanded="true"] {
+    transform: translateX(0);
+    transition: transform 0.3s ease;
+}
+
+/* Adjust main content when sidebar is collapsed */
+section.main > div {
+    padding-left: 1rem !important;
+}
+
+/* Hide default collapse button */
+button[kind="header"] {
+    display: none !important;
+}
+
 /* ── Sidebar text overrides ── */
 section[data-testid="stSidebar"] * {
     color: rgba(255,255,255,0.65) !important;
@@ -252,6 +308,72 @@ div:not(section[data-testid="stSidebar"]) .stTextInput > div > div > input:focus
 /* ── Divider ── */
 hr { border-color: #D1FAE5 !important; }
 </style>
+""", unsafe_allow_html=True)
+
+# ======================
+# HAMBURGER MENU SCRIPT
+# ======================
+st.markdown("""
+<script>
+(function() {
+    function createHamburger() {
+        // Check if already exists
+        if (document.getElementById('custom-hamburger')) return;
+        
+        const hamburger = document.createElement('div');
+        hamburger.id = 'custom-hamburger';
+        hamburger.className = 'hamburger-toggle';
+        hamburger.innerHTML = `
+            <svg viewBox="0 0 24 24">
+                <line class="line" x1="3" y1="6" x2="21" y2="6" />
+                <line class="line" x1="3" y1="12" x2="21" y2="12" />
+                <line class="line" x1="3" y1="18" x2="21" y2="18" />
+            </svg>
+        `;
+        
+        hamburger.addEventListener('click', function() {
+            const sidebar = document.querySelector('[data-testid="stSidebar"]');
+            const closeButton = sidebar?.querySelector('button[kind="header"]');
+            
+            if (closeButton) {
+                closeButton.click();
+            }
+            
+            // Update hamburger position based on sidebar state
+            setTimeout(() => {
+                const isExpanded = sidebar?.getAttribute('aria-expanded') === 'true';
+                hamburger.style.left = isExpanded ? '15px' : '15px';
+            }, 100);
+        });
+        
+        document.body.appendChild(hamburger);
+        
+        // Initial position
+        setTimeout(() => {
+            const sidebar = document.querySelector('[data-testid="stSidebar"]');
+            const isExpanded = sidebar?.getAttribute('aria-expanded') === 'true';
+            hamburger.style.left = '15px';
+        }, 100);
+    }
+    
+    // Create hamburger after page loads
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', createHamburger);
+    } else {
+        createHamburger();
+    }
+    
+    // Re-create on navigation
+    let lastUrl = location.href;
+    new MutationObserver(() => {
+        const url = location.href;
+        if (url !== lastUrl) {
+            lastUrl = url;
+            setTimeout(createHamburger, 500);
+        }
+    }).observe(document, {subtree: true, childList: true});
+})();
+</script>
 """, unsafe_allow_html=True)
 
 DEV_USER = "developer"
@@ -667,90 +789,4 @@ else:
                     st.success(f"Akun ID {int(id_del)} berhasil dihapus.")
                     st.rerun()
         else:
-            st.markdown(
-                "<div style='font-size:14px;font-weight:500;color:#2D303E;margin-bottom:.75rem;'>"
-                "Semua data kas</div>", unsafe_allow_html=True
-            )
-            if df_kas.empty:
-                st.info("Belum ada data kas.")
-            else:
-                st.dataframe(df_kas, use_container_width=True, hide_index=True)
-                st.download_button(
-                    "⬇  Download PDF kas",
-                    generate_pdf(df_kas, "Semua Data Kas"),
-                    "kas_all.pdf", mime="application/pdf"
-                )
-
-    # ==================== ADMIN ====================
-    elif st.session_state.role == "admin":
-
-        kls = st.session_state.kelas
-        jrs = st.session_state.jurusan
-
-        with st.sidebar:
-            render_logo_sidebar()
-            render_class_chip(kls, jrs)
-            sidebar_label("Navigasi")
-
-            if st.button("📊  Dashboard",   use_container_width=True):
-                st.session_state.menu = "dashboard"
-                st.rerun()
-            if st.button("💸  Pengeluaran", use_container_width=True):
-                st.session_state.menu = "pengeluaran"
-                st.rerun()
-            if st.button("👤  Per Siswa",   use_container_width=True):
-                st.session_state.menu = "siswa"
-                st.rerun()
-
-            sidebar_sep()
-            sidebar_label("Lainnya")
-
-            if st.button("🗑️  Hapus Data",  use_container_width=True):
-                st.session_state.menu = "hapus"
-                st.rerun()
-
-            st.markdown("<div style='height:32px'></div>", unsafe_allow_html=True)
-            sidebar_sep()
-            sidebar_user(f"Admin · {jrs}")
-            st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
-            if st.button("Keluar", use_container_width=True):
-                st.session_state.clear()
-                st.rerun()
-
-        # ---- load data ----
-        df = pd.read_sql(
-            "SELECT * FROM kas WHERE kelas=? AND jurusan=?", conn,
-            params=(kls, jrs)
-        )
-        if not df.empty:
-            df["tanggal"] = pd.to_datetime(df["tanggal"]).dt.strftime("%Y-%m-%d")
-
-        # ==================== DASHBOARD ====================
-        if st.session_state.menu == "dashboard":
-
-            page_header("Dashboard kas", f"Kelas {kls} · {jrs}")
-
-            total_kas = df["nominal"].sum() if not df.empty else 0
-            tepat     = len(df[df["status"] == "Tepat Waktu"]) if not df.empty else 0
-            telat     = len(df[df["status"] == "Telat"])       if not df.empty else 0
-
-            m1, m2, m3 = st.columns(3)
-            m1.metric("Total kas masuk", format_rupiah(total_kas))
-            m2.metric("Tepat waktu",     f"{tepat} siswa")
-            m3.metric("Telat bayar",     f"{telat} siswa")
-
-            st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
-
-            with st.expander("➕  Input pembayaran baru"):
-                c1, c2 = st.columns(2)
-                with c1:
-                    nama   = st.text_input("Nama siswa", placeholder="Nama lengkap")
-                    status = st.selectbox("Status", ["Tepat Waktu", "Telat"])
-                with c2:
-                    tgl = st.date_input("Tanggal")
-                    nom = st.text_input("Nominal", placeholder="Contoh: 25000")
-                ket = st.text_input("Keterangan", placeholder="Kas bulan April...")
-
-                if st.button("Simpan pembayaran", type="primary"):
-                    if not nama.strip():
-                        st.warning("Nama siswa tidak boleh kosong.")
+            st
