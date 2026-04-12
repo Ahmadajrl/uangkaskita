@@ -45,7 +45,7 @@ section[data-testid="stSidebar"] * {
 section[data-testid="stSidebar"] h1,
 section[data-testid="stSidebar"] h2,
 section[data-testid="stSidebar"] h3 {
-    color: #FFFFFF !important;
+    color: #01023B !important;
 }
 section[data-testid="stSidebar"] label {
     color: rgba(255,255,255,0.45) !important;
@@ -59,7 +59,7 @@ section[data-testid="stSidebar"] .stSelectbox > div > div {
 section[data-testid="stSidebar"] input {
     background: rgba(9,242,137,0.08) !important;
     border-color: rgba(9,242,137,0.2) !important;
-    color: #FFFFFF !important;
+    color: #01023B !important;
 }
 
 /* ── Sidebar buttons ── */
@@ -84,7 +84,7 @@ section[data-testid="stSidebar"] .stButton > button:hover {
 div:not(section[data-testid="stSidebar"]) .stButton > button {
     border-radius: 8px !important;
     border: 1px solid #D1FAE5 !important;
-    background: #FFFFFF !important;
+    background: #01023B !important;
     color: #01023B !important;
     font-size: 13px !important;
     font-weight: 400 !important;
