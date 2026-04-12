@@ -131,10 +131,10 @@ div:not(section[data-testid="stSidebar"]) .stDateInput > div > div > input,
 div:not(section[data-testid="stSidebar"]) .stNumberInput > div > div > input,
 div:not(section[data-testid="stSidebar"]) .stSelectbox > div > div {
     border-radius: 8px !important;
-    border: 1px solid #D1FAE5 !important;
+    border: 1px solid #111E54 !important;
     background: #09F289 !important;
     font-size: 13px !important;
-    color: #01023B !important;
+    color: #01023B !important; #inidia
 }
 div:not(section[data-testid="stSidebar"]) .stTextInput > div > div > input:focus {
     border-color: #09F289 !important;
