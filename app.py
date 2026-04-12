@@ -12,7 +12,7 @@ from reportlab.lib.pagesizes import A4
 # ======================
 st.set_page_config(
     page_title="KasKita",
-    page_icon="💳",
+    page_icon="icon.png",
     layout="wide",
     initial_sidebar_state="expanded"
 )
