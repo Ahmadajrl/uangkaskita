@@ -54,12 +54,12 @@ section[data-testid="stSidebar"] label {
 section[data-testid="stSidebar"] .stSelectbox > div > div {
     background: rgba(9,242,137,0.08) !important;
     border-color: rgba(9,242,137,0.2) !important;
-    color: #FFFFFF !important;
+    color: #1A1C24 !important;
 }
 section[data-testid="stSidebar"] input {
     background: rgba(9,242,137,0.08) !important;
     border-color: rgba(9,242,137,0.2) !important;
-    color: #FFFFFF !important;
+    color: #1A1C24 !important;
 }
 
 /* ── Sidebar buttons ── */
@@ -364,7 +364,7 @@ def render_logo_sidebar():
 
 def render_class_chip(kls, jrs):
     st.markdown(f"""
-    <div style="background:rgba(9,242,137,0.1);border:1px solid rgba(9,242,137,0.22);
+    <div style="background:rgba(26,28,36,1);border:1px solid rgba(9,242,137,0.22);
                 border-radius:8px;padding:8px 10px;margin-bottom:1rem;">
         <div style="font-size:10px;color:#09F289;font-weight:500;letter-spacing:.04em;">SESI AKTIF</div>
         <div style="font-size:12px;color:rgba(255,255,255,0.75);margin-top:2px;">
@@ -397,7 +397,7 @@ def sidebar_user(label):
     </div>
     """, unsafe_allow_html=True)
 
-def info_badge_sidebar(text, color="#09F289", bg="rgba(9,242,137,0.12)"):
+def info_badge_sidebar(text, color="#09F289", bg="rgba(26,28,36,1)"):
     st.markdown(f"""
     <div style="display:inline-block;background:{bg};color:{color};
                 font-size:11px;padding:3px 10px;border-radius:20px;
