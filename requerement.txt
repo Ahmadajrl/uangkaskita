@@ -3,3 +3,5 @@ pandas
 mysql-connector-python
 scikit-learn
 reportlab
+sqlite3
+hashlib
