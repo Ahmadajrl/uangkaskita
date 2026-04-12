@@ -74,21 +74,6 @@ st.markdown("""
     stroke: #09F289;
 }
 
-/* Sidebar collapsed state */
-[data-testid="stSidebar"][aria-expanded="false"] {
-    transform: translateX(-100%);
-    transition: transform 0.3s ease;
-}
-[data-testid="stSidebar"][aria-expanded="true"] {
-    transform: translateX(0);
-    transition: transform 0.3s ease;
-}
-
-/* Adjust main content when sidebar is collapsed */
-section.main > div {
-    padding-left: 1rem !important;
-}
-
 /* Hide default collapse button */
 button[kind="header"] {
     display: none !important;
@@ -317,7 +302,6 @@ st.markdown("""
 <script>
 (function() {
     function createHamburger() {
-        // Check if already exists
         if (document.getElementById('custom-hamburger')) return;
         
         const hamburger = document.createElement('div');
@@ -338,32 +322,17 @@ st.markdown("""
             if (closeButton) {
                 closeButton.click();
             }
-            
-            // Update hamburger position based on sidebar state
-            setTimeout(() => {
-                const isExpanded = sidebar?.getAttribute('aria-expanded') === 'true';
-                hamburger.style.left = isExpanded ? '15px' : '15px';
-            }, 100);
         });
         
         document.body.appendChild(hamburger);
-        
-        // Initial position
-        setTimeout(() => {
-            const sidebar = document.querySelector('[data-testid="stSidebar"]');
-            const isExpanded = sidebar?.getAttribute('aria-expanded') === 'true';
-            hamburger.style.left = '15px';
-        }, 100);
     }
     
-    // Create hamburger after page loads
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', createHamburger);
     } else {
         createHamburger();
     }
     
-    // Re-create on navigation
     let lastUrl = location.href;
     new MutationObserver(() => {
         const url = location.href;
@@ -789,4 +758,29 @@ else:
                     st.success(f"Akun ID {int(id_del)} berhasil dihapus.")
                     st.rerun()
         else:
-            st
+            st.markdown(
+                "<div style='font-size:14px;font-weight:500;color:#2D303E;margin-bottom:.75rem;'>"
+                "Semua data kas</div>", unsafe_allow_html=True
+            )
+            if df_kas.empty:
+                st.info("Belum ada data kas.")
+            else:
+                st.dataframe(df_kas, use_container_width=True, hide_index=True)
+                st.download_button(
+                    "⬇  Download PDF kas",
+                    generate_pdf(df_kas, "Semua Data Kas"),
+                    "kas_all.pdf", mime="application/pdf"
+                )
+
+    # ==================== ADMIN ====================
+    elif st.session_state.role == "admin":
+
+        kls = st.session_state.kelas
+        jrs = st.session_state.jurusan
+
+        with st.sidebar:
+            render_logo_sidebar()
+            render_class_chip(kls, jrs)
+            sidebar_label("Navigasi")
+
+            if st.button("📊  Dashboard",   use_container_width=True):
