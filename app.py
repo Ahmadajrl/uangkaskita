@@ -54,7 +54,7 @@ section[data-testid="stSidebar"] label {
 section[data-testid="stSidebar"] .stSelectbox > div > div {
     background: rgba(9,242,137,0.08) !important;
     border-color: rgba(9,242,137,0.2) !important;
-    color: #FFFFFF !important;
+    color: #01023B !important; /* ini warna font kelas jurusan dll */
 }
 section[data-testid="stSidebar"] input {
     background: rgba(9,242,137,0.08) !important;
