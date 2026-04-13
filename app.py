@@ -16,7 +16,10 @@ DEV_PASS = "kaskita"
 # FORMAT RUPIAH
 # ======================
 def format_rupiah(angka):
-    return "Rp.{:,.0f}".format(angka).replace(",", ".")
+    try:
+        return "Rp.{:,.0f}".format(float(angka)).replace(",", ".")
+    except:
+        return "Rp.0"
 
 def clean_nominal(n):
     if not n:
@@ -31,7 +34,10 @@ def generate_pdf(df):
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer)
 
-    data = [df.columns.tolist()] + df.values.tolist()
+    if df.empty:
+        df = pd.DataFrame({"Info": ["Tidak ada data"]})
+
+    data = [df.columns.tolist()] + df.astype(str).values.tolist()
 
     table = Table(data)
     table.setStyle(TableStyle([
@@ -185,18 +191,18 @@ else:
         df = pd.read_sql("SELECT * FROM kas", conn)
 
         if not df.empty:
-            df["tanggal"] = pd.to_datetime(df["tanggal"])
+            df["tanggal"] = pd.to_datetime(df["tanggal"], errors='coerce')
             df["bulan"] = df["tanggal"].dt.strftime("%B %Y")
             df["tanggal"] = df["tanggal"].dt.strftime("%Y-%m-%d")
 
             col1, col2, col3 = st.columns(3)
 
             with col1:
-                fk = st.selectbox("Kelas", sorted(df["kelas"].unique()))
+                fk = st.selectbox("Kelas", sorted(df["kelas"].dropna().unique()))
             with col2:
-                fj = st.selectbox("Jurusan", sorted(df["jurusan"].unique()))
+                fj = st.selectbox("Jurusan", sorted(df["jurusan"].dropna().unique()))
             with col3:
-                fb = st.selectbox("Bulan", sorted(df["bulan"].unique()))
+                fb = st.selectbox("Bulan", sorted(df["bulan"].dropna().unique()))
 
             df = df[
                 (df["kelas"] == fk) &
@@ -235,10 +241,11 @@ else:
         )
 
         if not df_admin.empty:
-            id_del = st.number_input("Hapus ID Akun", step=1)
+            id_del = st.number_input("Hapus ID Akun", min_value=1, step=1)
             if st.button("Hapus Akun"):
                 cursor.execute("DELETE FROM admin WHERE id=?", (id_del,))
                 conn.commit()
+                st.success("Akun dihapus")
                 st.rerun()
 
         st.subheader("📊 Semua Data Kas")
@@ -283,16 +290,20 @@ else:
             nom = st.text_input("Nominal")
 
             if st.button("Simpan"):
-                cursor.execute(
-                    "INSERT INTO kas VALUES (NULL,?,?,?,?,?,?,?)",
-                    (nama, tgl.strftime("%Y-%m-%d"), status,
-                     st.session_state.kelas,
-                     st.session_state.jurusan,
-                     ket,
-                     clean_nominal(nom))
-                )
-                conn.commit()
-                st.rerun()
+                if nama and nom:
+                    cursor.execute(
+                        "INSERT INTO kas VALUES (NULL,?,?,?,?,?,?,?)",
+                        (nama, tgl.strftime("%Y-%m-%d"), status,
+                         st.session_state.kelas,
+                         st.session_state.jurusan,
+                         ket,
+                         clean_nominal(nom))
+                    )
+                    conn.commit()
+                    st.success("Data tersimpan")
+                    st.rerun()
+                else:
+                    st.warning("Nama dan nominal wajib diisi")
 
             df = pd.read_sql(
                 "SELECT * FROM kas WHERE kelas=? AND jurusan=?",
@@ -304,7 +315,10 @@ else:
 
                 st.subheader("📈 Statistik")
                 st.metric("Total Kas", format_rupiah(df["nominal"].sum()))
-                st.bar_chart(df["status"].value_counts())
+
+                status_count = df["status"].value_counts()
+                if not status_count.empty:
+                    st.bar_chart(status_count)
 
                 st.subheader("📋 Data Kas")
                 df["tanggal"] = pd.to_datetime(df["tanggal"]).dt.strftime("%Y-%m-%d")
@@ -316,7 +330,7 @@ else:
                     "kas_admin.pdf"
                 )
 
-                # ================= CEK STATISTIK SISWA (RESTORED AGAIN) =================
+                # STATISTIK SISWA
                 st.subheader("📊 Cek Statistik Per Siswa")
 
                 siswa = st.selectbox("Pilih Siswa", sorted(df["nama"].unique()))
@@ -325,7 +339,8 @@ else:
                     data = df[df["nama"] == siswa]
                     hasil = data["status"].value_counts()
 
-                    st.bar_chart(hasil)
+                    if not hasil.empty:
+                        st.bar_chart(hasil)
 
                     total = len(data)
                     telat = len(data[data["status"] == "Telat"])
@@ -344,7 +359,7 @@ else:
             col1, col2, col3 = st.columns(3)
 
             with col1:
-                id_hapus = st.number_input("Hapus ID", step=1)
+                id_hapus = st.number_input("Hapus ID", min_value=1, step=1)
                 if st.button("Hapus ID") and konfirmasi:
                     cursor.execute("DELETE FROM kas WHERE id=?", (id_hapus,))
                     conn.commit()
@@ -375,15 +390,17 @@ else:
             nom = st.text_input("Nominal")
 
             if st.button("Simpan"):
-                cursor.execute(
-                    "INSERT INTO pengeluaran VALUES (NULL,?,?,?,?,?)",
-                    (tgl.strftime("%Y-%m-%d"),
-                     st.session_state.kelas,
-                     st.session_state.jurusan,
-                     ket,
-                     clean_nominal(nom))
-                )
-                conn.commit()
+                if nom:
+                    cursor.execute(
+                        "INSERT INTO pengeluaran VALUES (NULL,?,?,?,?,?)",
+                        (tgl.strftime("%Y-%m-%d"),
+                         st.session_state.kelas,
+                         st.session_state.jurusan,
+                         ket,
+                         clean_nominal(nom))
+                    )
+                    conn.commit()
+                    st.success("Pengeluaran tersimpan")
 
             df_keluar = pd.read_sql(
                 "SELECT * FROM pengeluaran WHERE kelas=? AND jurusan=?",
