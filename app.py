@@ -1,3 +1,145 @@
+import streamlit as st
+import pandas as pd
+import sqlite3
+import io
+
+# ======================
+# PDF GENERATOR
+# ======================
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.pagesizes import A4
+
+def generate_pdf(df, title="Laporan KasKita"):
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4)
+
+    styles = getSampleStyleSheet()
+    elements = []
+
+    # Judul
+    elements.append(Paragraph(f"<b>{title}</b>", styles["Title"]))
+    elements.append(Spacer(1, 12))
+
+    # Data tabel
+    data = [df.columns.tolist()] + df.values.tolist()
+    table = Table(data, repeatRows=1)
+
+    table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#01023B")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.HexColor("#09F289")),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("FONTSIZE", (0, 0), (-1, 0), 10),
+
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#F3FDF9")]),
+        ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#D1FAE5")),
+        ("FONTSIZE", (0, 1), (-1, -1), 9),
+        ("PADDING", (0, 0), (-1, -1), 6),
+        ("TEXTCOLOR", (0, 1), (-1, -1), colors.HexColor("#01023B")),
+    ]))
+
+    elements.append(table)
+    elements.append(Spacer(1, 12))
+    elements.append(Paragraph("© KasKita 2026", styles["Normal"]))
+
+    doc.build(elements)
+    buffer.seek(0)
+
+    return buffer
+
+# ======================
+# SESSION STATE (HARUS DI ATAS)
+# ======================
+defaults = {
+    "login": False,
+    "role": None,
+    "kelas": None,
+    "jurusan": None,
+    "page": "role",
+    "menu": "dashboard"
+}
+
+for k, v in defaults.items():
+    if k not in st.session_state:
+        st.session_state[k] = v
+# ======================
+# DATABASE
+# ======================
+conn = sqlite3.connect("kas.db", check_same_thread=False)
+cursor = conn.cursor()
+
+cursor.execute('''
+CREATE TABLE IF NOT EXISTS kas (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nama TEXT,
+    tanggal TEXT,
+    status TEXT,
+    kelas TEXT,
+    jurusan TEXT,
+    keterangan TEXT,
+    nominal INTEGER
+)
+''')
+
+cursor.execute('''
+CREATE TABLE IF NOT EXISTS admin (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT,
+    password TEXT,
+    email TEXT,
+    kelas TEXT,
+    jurusan TEXT
+)
+''')
+
+cursor.execute('''
+CREATE TABLE IF NOT EXISTS pengeluaran (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tanggal TEXT,
+    kelas TEXT,
+    jurusan TEXT,
+    keterangan TEXT,
+    nominal INTEGER
+)
+''')
+
+conn.commit()
+# ======================
+# HELPER
+# ======================
+def format_rupiah(angka):
+    return "Rp {:,}".format(int(angka)).replace(",", ".")
+
+def hdivider():
+    st.markdown("---")
+
+def page_header(title, subtitle=None):
+    st.title(title)
+    if subtitle:
+        st.caption(subtitle)
+
+# ======================
+# SIDEBAR UI
+# ======================
+def render_logo_sidebar():
+    st.markdown("### 💳 KasKita")
+
+def info_badge_sidebar(text, color="#09F289", bg="rgba(9,242,137,0.12)"):
+    st.markdown(f"**{text}**")
+
+def sidebar_label(text):
+    st.markdown(f"### {text}")
+
+def sidebar_sep():
+    st.markdown("---")
+
+def sidebar_user(text):
+    st.markdown(f"👤 {text}")
+
+DEV_USER = "developer"
+DEV_PASS = "kaskita"
+
 # ======================
 # VIEW: ROLE PICKER
 # ======================
