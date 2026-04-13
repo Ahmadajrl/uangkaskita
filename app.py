@@ -1,55 +1,98 @@
-import streamlit as st
+import streamlit as st 
 import pandas as pd
 import sqlite3
+import hashlib
 import io
 
-# ======================
-# PDF GENERATOR
-# ======================
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 from reportlab.lib import colors
-from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.lib.pagesizes import A4
 
-def generate_pdf(df, title="Laporan KasKita"):
+st.set_page_config(layout="wide")
+
+DEV_USER = "developer"
+DEV_PASS = "kaskita"
+
+# ======================
+# FORMAT RUPIAH
+# ======================
+def format_rupiah(angka):
+    return "Rp.{:,.0f}".format(angka).replace(",", ".")
+
+def clean_nominal(n):
+    if not n:
+        return 0
+    n = str(n).lower().replace("rp", "").replace(".", "").replace(",", "")
+    return int(n) if n.isdigit() else 0
+
+# ======================
+# PDF
+# ======================
+def generate_pdf(df):
     buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=A4)
+    doc = SimpleDocTemplate(buffer)
 
-    styles = getSampleStyleSheet()
-    elements = []
-
-    # Judul
-    elements.append(Paragraph(f"<b>{title}</b>", styles["Title"]))
-    elements.append(Spacer(1, 12))
-
-    # Data tabel
     data = [df.columns.tolist()] + df.values.tolist()
-    table = Table(data, repeatRows=1)
 
+    table = Table(data)
     table.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#01023B")),
-        ("TEXTCOLOR", (0, 0), (-1, 0), colors.HexColor("#09F289")),
-        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-        ("FONTSIZE", (0, 0), (-1, 0), 10),
-
-        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#F3FDF9")]),
-        ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#D1FAE5")),
-        ("FONTSIZE", (0, 1), (-1, -1), 9),
-        ("PADDING", (0, 0), (-1, -1), 6),
-        ("TEXTCOLOR", (0, 1), (-1, -1), colors.HexColor("#01023B")),
+        ('BACKGROUND', (0,0), (-1,0), colors.grey),
+        ('TEXTCOLOR',(0,0),(-1,0),colors.white),
+        ('GRID',(0,0),(-1,-1),1,colors.black)
     ]))
 
-    elements.append(table)
-    elements.append(Spacer(1, 12))
-    elements.append(Paragraph("© KasKita 2026", styles["Normal"]))
-
-    doc.build(elements)
+    doc.build([table])
     buffer.seek(0)
-
     return buffer
 
 # ======================
-# SESSION STATE (HARUS DI ATAS)
+# DB
+# ======================
+def init_db():
+    conn = sqlite3.connect("kas.db", check_same_thread=False)
+    cursor = conn.cursor()
+
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS kas (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nama TEXT,
+        tanggal TEXT,
+        status TEXT,
+        kelas TEXT,
+        jurusan TEXT,
+        keterangan TEXT,
+        nominal INTEGER
+    )
+    ''')
+
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS admin (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT,
+        password TEXT,
+        email TEXT,
+        kelas TEXT,
+        jurusan TEXT
+    )
+    ''')
+
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS pengeluaran (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        tanggal TEXT,
+        kelas TEXT,
+        jurusan TEXT,
+        keterangan TEXT,
+        nominal INTEGER
+    )
+    ''')
+
+    conn.commit()
+    return conn, cursor
+
+conn, cursor = init_db()
+
+# ======================
+# SESSION
 # ======================
 defaults = {
     "login": False,
@@ -63,414 +106,320 @@ defaults = {
 for k, v in defaults.items():
     if k not in st.session_state:
         st.session_state[k] = v
-# ======================
-# DATABASE
-# ======================
-conn = sqlite3.connect("kas.db", check_same_thread=False)
-cursor = conn.cursor()
-
-cursor.execute('''
-CREATE TABLE IF NOT EXISTS kas (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    nama TEXT,
-    tanggal TEXT,
-    status TEXT,
-    kelas TEXT,
-    jurusan TEXT,
-    keterangan TEXT,
-    nominal INTEGER
-)
-''')
-
-cursor.execute('''
-CREATE TABLE IF NOT EXISTS admin (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT,
-    password TEXT,
-    email TEXT,
-    kelas TEXT,
-    jurusan TEXT
-)
-''')
-
-cursor.execute('''
-CREATE TABLE IF NOT EXISTS pengeluaran (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    tanggal TEXT,
-    kelas TEXT,
-    jurusan TEXT,
-    keterangan TEXT,
-    nominal INTEGER
-)
-''')
-
-conn.commit()
-# ======================
-# HELPER
-# ======================
-def format_rupiah(angka):
-    return "Rp {:,}".format(int(angka)).replace(",", ".")
-
-def hdivider():
-    st.markdown("""---""", unsafe_allow_html=True)
-
-def page_header(title, subtitle=None):
-    st.title(title)
-    if subtitle:
-        st.caption(subtitle)
 
 # ======================
-# SIDEBAR UI
+# LOGO
 # ======================
-def render_logo_sidebar():
-    st.markdown("""💳 KasKita""", unsafe_allow_html=True)
-
-def info_badge_sidebar(text, color="#09F289", bg="rgba(9,242,137,0.12)"):
-    st.markdown(f"""{text}""", unsafe_allow_html=True)
-
-def sidebar_label(text):
-    st.markdown(f""" {text}""", unsafe_allow_html=True)
-
-def sidebar_sep():
-    st.markdown("""---""", unsafe_allow_html=True)
-
-def sidebar_user(text):
-    st.markdown(f"""👤 {text}""", unsafe_allow_html=True)
-
-DEV_USER = "developer"
-DEV_PASS = "kaskita"
+col1, col2, col3 = st.columns([1,2,1])
+with col2:
+    st.image("logo.png", use_container_width=True)
 
 # ======================
-# VIEW: ROLE PICKER
+# ROLE
 # ======================
 if not st.session_state.login and st.session_state.page == "role":
 
-    st.markdown("""
-    <div style="text-align:center;padding:2.5rem 0 1rem;">
+    st.title("SELAMAT DATANG DI KAS KITA")
 
-        <div style="display:inline-flex;align-items:center;gap:12px;margin-bottom:8px;">
+    col1, col2, col3 = st.columns(3)
 
-            <div style="width:48px;height:48px;background:#01023B;border-radius:12px;
-                        display:flex;align-items:center;justify-content:center;">
-                <svg width="26" height="26" viewBox="0 0 22 22" fill="none">
-                    <rect x="2" y="6" width="18" height="11" rx="2.5"
-                          stroke="#09F289" stroke-width="1.7"/>
-                    <path d="M2 9.5h18" stroke="#09F289" stroke-width="1.7"/>
-                    <rect x="4.5" y="12" width="6" height="2"
-                          rx="0.6" fill="#09F289"/>
-                </svg>
-            </div>
-
-            <div style="text-align:left;">
-                <div style="font-size:28px;font-weight:700;color:#01023B;line-height:1.1;">
-                    KasKita
-                </div>
-                <div style="font-size:12px;color:#6B7280;">
-                    Manajemen kas kelas digital
-                </div>
-            </div>
-
-        </div>
-
-        <p style="font-size:14px;color:#6B7280;margin-top:0.75rem;">
-            Pilih peran untuk melanjutkan
-        </p>
-
-    </div>
-    """, unsafe_allow_html=True)
-
-    _, col1, col2, _ = st.columns([1, 1.1, 1.1, 1])
-
-    # ================= ADMIN CARD =================
     with col1:
-        st.markdown("""
-        <div style="background:#FFFFFF;border:1px solid #D1FAE5;border-radius:14px;
-                    padding:1.5rem;text-align:center;margin-bottom:10px;">
-
-            <div style="width:48px;height:48px;background:#E6FDF5;border-radius:12px;
-                        display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                    <circle cx="12" cy="8" r="4" stroke="#01023B" stroke-width="1.6"/>
-                    <path d="M4 20c0-4 3.582-7 8-7s8 3 8 7"
-                          stroke="#01023B" stroke-width="1.6" stroke-linecap="round"/>
-                </svg>
-            </div>
-
-            <div style="font-size:15px;font-weight:500;color:#01023B;">
-                Admin
-            </div>
-
-            <div style="font-size:11px;color:#6B7280;margin-top:4px;">
-                Kelola kas kelas
-            </div>
-
-        </div>
-        """, unsafe_allow_html=True)
-
-        if st.button("Masuk sebagai Admin", key="btn_admin", type="primary", use_container_width=True):
+        if st.button("Admin"):
             st.session_state.role = "admin"
             st.session_state.page = "login"
-            st.rerun()
 
-    # ================= USER CARD =================
     with col2:
-        st.markdown("""
-        <div style="background:#FFFFFF;border:1px solid #D1FAE5;border-radius:14px;
-                    padding:1.5rem;text-align:center;margin-bottom:10px;">
-
-            <div style="width:48px;height:48px;background:#E6FDF5;border-radius:12px;
-                        display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                    <path d="M4 6h16M4 10h16M4 14h10"
-                          stroke="#01023B" stroke-width="1.6" stroke-linecap="round"/>
-                </svg>
-            </div>
-
-            <div style="font-size:15px;font-weight:500;color:#01023B;">
-                User
-            </div>
-
-            <div style="font-size:11px;color:#6B7280;margin-top:4px;">
-                Lihat data kas
-            </div>
-
-        </div>
-        """, unsafe_allow_html=True)
-
-        if st.button("Masuk sebagai User", key="btn_user", type="primary", use_container_width=True):
+        if st.button("User"):
             st.session_state.role = "user"
             st.session_state.login = True
             st.rerun()
 
-    st.markdown("""<div style='height:1rem'></div>""", unsafe_allow_html=True)
+    with col3:
+        if st.button("Developer"):
+            st.session_state.role = "dev"
+            st.session_state.page = "login"
 
-    # ================= DEV LOGIN =================
-    _, mid, _ = st.columns([1, 2, 1])
-
-    with mid:
-        with st.expander("🔧 Login Developer"):
-            du = st.text_input("Username", key="dev_u")
-            dp = st.text_input("Password", type="password", key="dev_p")
-
-            if st.button("Login Developer", key="btn_dev"):
-                if du == DEV_USER and dp == DEV_PASS:
-                    st.session_state.role = "dev"
-                    st.session_state.login = True
-                    st.rerun()
-                else:
-                    st.error("Username atau password salah.")
-
-    st.markdown("""
-    <div style="text-align:center;margin-top:2.5rem;">
-        <span style="font-size:11px;color:#B0BEC5;">© KasKita 2026</span>
-    </div>
-    """, unsafe_allow_html=True)
-    # ======================
-# VIEW: LOGIN ADMIN
 # ======================
-elif not st.session_state.login and st.session_state.page == "login":
+# LOGIN
+# ======================
+elif not st.session_state.login:
 
-    st.markdown("""
-    <div style="text-align:center;padding:2rem 0 1.5rem;">
-        <div style="font-size:22px;font-weight:600;color:#01023B;">
-            Login Admin
-        </div>
-        <div style="font-size:13px;color:#6B7280;margin-top:4px;">
-            Masukkan detail akun kelas kamu
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.title("Login")
 
-    _, mid, _ = st.columns([1, 1.4, 1])
+    if st.session_state.role == "admin":
 
-    with mid:
-        st.markdown("""
-        <div style="background:#FFFFFF;border:1px solid #D1FAE5;border-radius:14px;padding:1.5rem;">
-        """, unsafe_allow_html=True)
+        user = st.text_input("Username")
+        pw = st.text_input("Password", type="password")
+        kelas = st.selectbox("Kelas", ["10","11","12"])
+        jurusan = st.text_input("Jurusan")
 
-        st.text_input("Username", placeholder="Masukkan username", key="adm_user")
-        st.text_input("Password", type="password", placeholder="••••••••", key="adm_pass")
-
-        c1, c2 = st.columns(2)
-
-        with c1:
-            kelas = st.selectbox("Kelas", ["10", "11", "12"])
-
-        with c2:
-            jurusan = st.text_input("Jurusan", placeholder="Contoh: RPL")
-
-        st.markdown("""<div style='height:6px'></div>""", unsafe_allow_html=True)
-
-        if st.button("Masuk ke Dashboard →", type="primary", use_container_width=True):
-            if not jurusan.strip():
-                st.warning("Jurusan tidak boleh kosong.")
-            else:
-                st.session_state.login = True
-                st.session_state.kelas = kelas
-                st.session_state.jurusan = jurusan.upper()
-                st.rerun()
-
-        st.markdown("""</div>""", unsafe_allow_html=True)
-
-        st.markdown("""<div style='height:8px'></div>""", unsafe_allow_html=True)
-
-        if st.button("← Kembali pilih role", use_container_width=True):
-            st.session_state.page = "role"
+        if st.button("Login Admin"):
+            st.session_state.login = True
+            st.session_state.kelas = kelas
+            st.session_state.jurusan = jurusan.upper()
             st.rerun()
+
+    elif st.session_state.role == "dev":
+
+        user = st.text_input("Username Developer")
+        pw = st.text_input("Password Developer", type="password")
+
+        if st.button("Login Developer"):
+            if user == DEV_USER and pw == DEV_PASS:
+                st.session_state.login = True
+                st.session_state.role = "dev"
+                st.rerun()
+            else:
+                st.error("Login gagal")
+
 # ======================
 # MAIN APP
 # ======================
 else:
 
-    # ==================== USER ====================
+    st.title("📊 Dashboard KAS")
+
+    # ================= USER =================
     if st.session_state.role == "user":
 
-        with st.sidebar:
-            render_logo_sidebar()
-            info_badge_sidebar("Mode Publik", "#09F289", "rgba(9,242,137,0.12)")
-            sidebar_label("Filter data")
+        df = pd.read_sql("SELECT * FROM kas", conn)
 
-        df_all = pd.read_sql("SELECT * FROM kas", conn)
+        if not df.empty:
+            df["tanggal"] = pd.to_datetime(df["tanggal"])
+            df["bulan"] = df["tanggal"].dt.strftime("%B %Y")
+            df["tanggal"] = df["tanggal"].dt.strftime("%Y-%m-%d")
 
-        with st.sidebar:
-            if not df_all.empty:
-                df_all["bulan"] = pd.to_datetime(df_all["tanggal"]).dt.strftime("%B %Y")
+            col1, col2, col3 = st.columns(3)
 
-                fk = st.selectbox("Kelas", sorted(df_all["kelas"].unique()))
-                fj = st.selectbox("Jurusan", sorted(df_all["jurusan"].unique()))
-                fb = st.selectbox("Bulan", sorted(df_all["bulan"].unique()))
+            with col1:
+                fk = st.selectbox("Kelas", sorted(df["kelas"].unique()))
+            with col2:
+                fj = st.selectbox("Jurusan", sorted(df["jurusan"].unique()))
+            with col3:
+                fb = st.selectbox("Bulan", sorted(df["bulan"].unique()))
 
-        with st.sidebar:
-            sidebar_sep()
-            sidebar_user("User Publik")
-            st.markdown("""<div style='height:8px'></div>""", unsafe_allow_html=True)
+            df = df[
+                (df["kelas"] == fk) &
+                (df["jurusan"] == fj) &
+                (df["bulan"] == fb)
+            ]
 
-            if st.button("Keluar", use_container_width=True):
-                st.session_state.clear()
-                st.rerun()
+            st.metric("Total Kas", format_rupiah(df["nominal"].sum()))
+            st.dataframe(df)
 
-        page_header("Data kas kelas", "Lihat rekap pembayaran kas")
-
-        if df_all.empty:
-            st.info("Belum ada data kas yang tersedia.")
-        else:
-            df_all["bulan"] = pd.to_datetime(df_all["tanggal"]).dt.strftime("%B %Y")
-
-            df = df_all[
-                (df_all["kelas"] == fk) &
-                (df_all["jurusan"] == fj) &
-                (df_all["bulan"] == fb)
-            ].copy()
-
-            df["tanggal"] = pd.to_datetime(df["tanggal"]).dt.strftime("%Y-%m-%d")
-
-            m1, m2, m3 = st.columns(3)
-            m1.metric("Total kas", format_rupiah(df["nominal"].sum()))
-            m2.metric("Jumlah transaksi", f"{len(df)}")
-            m3.metric("Pembayaran telat", f"{len(df[df['status'] == 'Telat'])} siswa")
-
-            st.markdown("""<div style='height:8px'></div>""", unsafe_allow_html=True)
-
-            tab1, tab2 = st.tabs(["📋 Tabel data", "📊 Statistik"])
-
-            with tab1:
-                st.dataframe(
-                    df.drop(columns=["bulan"], errors="ignore"),
-                    use_container_width=True,
-                    hide_index=True
-                )
-
-                st.download_button(
-                    "⬇ Download PDF",
-                    generate_pdf(
-                        df.drop(columns=["bulan"], errors="ignore"),
-                        f"Laporan Kas {fk} {fj} — {fb}"
-                    ),
-                    f"kas_{fk}_{fj}.pdf",
-                    mime="application/pdf"
-                )
-
-            with tab2:
-                st.markdown("""Status pembayaran""", unsafe_allow_html=True)
-                st.bar_chart(df["status"].value_counts())
-
-    # ==================== DEVELOPER ====================
-    elif st.session_state.role == "dev":
-
-        with st.sidebar:
-            render_logo_sidebar()
-            info_badge_sidebar("Developer Panel", "#EF9F27", "rgba(239,159,39,0.15)")
-            sidebar_label("Menu")
-
-            menu_dev = st.radio(
-                "",
-                ["Akun Admin", "Semua Data Kas"],
-                label_visibility="collapsed"
+            st.download_button(
+                "⬇️ Download PDF",
+                generate_pdf(df),
+                "user_kas.pdf"
             )
 
-            sidebar_sep()
-            sidebar_user("Developer")
+        if st.button("Logout"):
+            st.session_state.clear()
+            st.rerun()
 
-            st.markdown("""<div style='height:8px'></div>""", unsafe_allow_html=True)
+    # ================= DEVELOPER =================
+    elif st.session_state.role == "dev":
 
-            if st.button("Keluar", use_container_width=True):
-                st.session_state.clear()
-                st.rerun()
-
-        page_header("Developer panel", "Manajemen sistem KasKita")
+        st.subheader("🛠️ Developer Panel")
 
         df_admin = pd.read_sql("SELECT * FROM admin", conn)
         df_kas = pd.read_sql("SELECT * FROM kas", conn)
 
-        # ===== AKUN ADMIN =====
-        if menu_dev == "Akun Admin":
+        st.subheader("👤 Data Akun Admin")
+        st.dataframe(df_admin)
 
-            st.markdown(
-                """<div style='font-size:14px;font-weight:500;color:#01023B;margin-bottom:.75rem;'>"
-                "Daftar akun admin</div>""",
-                unsafe_allow_html=True
-            )
+        st.download_button(
+            "⬇️ Download PDF Akun",
+            generate_pdf(df_admin),
+            "akun_admin.pdf"
+        )
 
-            if df_admin.empty:
-                st.info("Belum ada akun admin.")
-            else:
-                st.dataframe(df_admin, use_container_width=True, hide_index=True)
-
-                st.download_button(
-                    "⬇ Download PDF akun",
-                    generate_pdf(df_admin, "Data Akun Admin"),
-                    "akun_admin.pdf",
-                    mime="application/pdf"
-                )
-
-            hdivider()
-
-            st.markdown("""Hapus akun berdasarkan ID""", unsafe_allow_html=True)
-            id_del = st.number_input("ID akun", min_value=1, step=1)
-
-            if st.button("""Hapus akun", type="primary"""):
-                cursor.execute("DELETE FROM admin WHERE id=?", (int(id_del),))
+        if not df_admin.empty:
+            id_del = st.number_input("Hapus ID Akun", step=1)
+            if st.button("Hapus Akun"):
+                cursor.execute("DELETE FROM admin WHERE id=?", (id_del,))
                 conn.commit()
-                st.success(f"Akun ID {int(id_del)} berhasil dihapus.")
                 st.rerun()
 
-        # ===== SEMUA DATA KAS =====
-        else:
+        st.subheader("📊 Semua Data Kas")
+        st.dataframe(df_kas)
 
-            st.markdown("""
-                "<div style='font-size:14px;font-weight:500;color:#01023B;margin-bottom:.75rem;'>"
-                "Semua data kas</div>",
-                unsafe_allow_html=True """, unsafe_allow_html=True
+        st.download_button(
+            "⬇️ Download PDF Kas",
+            generate_pdf(df_kas),
+            "kas_all.pdf"
+        )
+
+        if st.button("Logout"):
+            st.session_state.clear()
+            st.rerun()
+
+    # ================= ADMIN =================
+    elif st.session_state.role == "admin":
+
+        st.success(f"Kelas {st.session_state.kelas} - {st.session_state.jurusan}")
+
+        colA, colB = st.columns(2)
+
+        with colA:
+            if st.button("📊 Dashboard"):
+                st.session_state.menu = "dashboard"
+                st.rerun()
+
+        with colB:
+            if st.button("💸 Pengeluaran"):
+                st.session_state.menu = "pengeluaran"
+                st.rerun()
+
+        # ================= DASHBOARD =================
+        if st.session_state.menu == "dashboard":
+
+            st.subheader("➕ Input Pembayaran")
+
+            nama = st.text_input("Nama")
+            tgl = st.date_input("Tanggal")
+            status = st.selectbox("Status", ["Tepat Waktu","Telat"])
+            ket = st.text_input("Keterangan")
+            nom = st.text_input("Nominal")
+
+            if st.button("Simpan"):
+                cursor.execute(
+                    "INSERT INTO kas VALUES (NULL,?,?,?,?,?,?,?)",
+                    (nama, tgl.strftime("%Y-%m-%d"), status,
+                     st.session_state.kelas,
+                     st.session_state.jurusan,
+                     ket,
+                     clean_nominal(nom))
+                )
+                conn.commit()
+                st.rerun()
+
+            df = pd.read_sql(
+                "SELECT * FROM kas WHERE kelas=? AND jurusan=?",
+                conn,
+                params=(st.session_state.kelas, st.session_state.jurusan)
             )
 
-            if df_kas.empty:
-                st.info("Belum ada data kas.")
-            else:
-                st.dataframe(df_kas, use_container_width=True, hide_index=True)
+            if not df.empty:
+
+                st.subheader("📈 Statistik")
+                st.metric("Total Kas", format_rupiah(df["nominal"].sum()))
+                st.bar_chart(df["status"].value_counts())
+
+                st.subheader("📋 Data Kas")
+                df["tanggal"] = pd.to_datetime(df["tanggal"]).dt.strftime("%Y-%m-%d")
+                st.dataframe(df)
 
                 st.download_button(
-                    "⬇ Download PDF kas",
-                    generate_pdf(df_kas, "Semua Data Kas"),
-                    "kas_all.pdf",
-                    mime="application/pdf"
+                    "⬇️ Download PDF Kas",
+                    generate_pdf(df),
+                    "kas_admin.pdf"
                 )
+
+                # ================= CEK STATISTIK SISWA (RESTORED AGAIN) =================
+                st.subheader("📊 Cek Statistik Per Siswa")
+
+                siswa = st.selectbox("Pilih Siswa", sorted(df["nama"].unique()))
+
+                if st.button("Cek Statistik"):
+                    data = df[df["nama"] == siswa]
+                    hasil = data["status"].value_counts()
+
+                    st.bar_chart(hasil)
+
+                    total = len(data)
+                    telat = len(data[data["status"] == "Telat"])
+                    persen = (telat / total) * 100 if total > 0 else 0
+
+                    if persen < 20:
+                        st.success("Performa sangat baik 👍")
+                    elif persen < 50:
+                        st.warning("Perlu peningkatan ⚠️")
+                    else:
+                        st.error("Sering telat ❌")
+
+            st.subheader("🗑️ Hapus Data")
+            konfirmasi = st.checkbox("Konfirmasi")
+
+            col1, col2, col3 = st.columns(3)
+
+            with col1:
+                id_hapus = st.number_input("Hapus ID", step=1)
+                if st.button("Hapus ID") and konfirmasi:
+                    cursor.execute("DELETE FROM kas WHERE id=?", (id_hapus,))
+                    conn.commit()
+                    st.rerun()
+
+            with col2:
+                if not df.empty:
+                    siswa_del = st.selectbox("Hapus Siswa", df["nama"].unique())
+                    if st.button("Hapus Siswa") and konfirmasi:
+                        cursor.execute("DELETE FROM kas WHERE nama=?", (siswa_del,))
+                        conn.commit()
+                        st.rerun()
+
+            with col3:
+                if st.button("Hapus Semua") and konfirmasi:
+                    cursor.execute("DELETE FROM kas WHERE kelas=? AND jurusan=?",
+                                   (st.session_state.kelas, st.session_state.jurusan))
+                    conn.commit()
+                    st.rerun()
+
+        # ================= PENGELUARAN =================
+        elif st.session_state.menu == "pengeluaran":
+
+            st.subheader("💸 Input Pengeluaran")
+
+            tgl = st.date_input("Tanggal")
+            ket = st.text_input("Keterangan")
+            nom = st.text_input("Nominal")
+
+            if st.button("Simpan"):
+                cursor.execute(
+                    "INSERT INTO pengeluaran VALUES (NULL,?,?,?,?,?)",
+                    (tgl.strftime("%Y-%m-%d"),
+                     st.session_state.kelas,
+                     st.session_state.jurusan,
+                     ket,
+                     clean_nominal(nom))
+                )
+                conn.commit()
+
+            df_keluar = pd.read_sql(
+                "SELECT * FROM pengeluaran WHERE kelas=? AND jurusan=?",
+                conn,
+                params=(st.session_state.kelas, st.session_state.jurusan)
+            )
+
+            df_masuk = pd.read_sql(
+                "SELECT nominal FROM kas WHERE kelas=? AND jurusan=?",
+                conn,
+                params=(st.session_state.kelas, st.session_state.jurusan)
+            )
+
+            total_masuk = df_masuk["nominal"].sum() if not df_masuk.empty else 0
+            total_keluar = df_keluar["nominal"].sum() if not df_keluar.empty else 0
+            saldo = total_masuk - total_keluar
+
+            col1, col2, col3 = st.columns(3)
+            col1.metric("Total Kas", format_rupiah(total_masuk))
+            col2.metric("Total Pengeluaran", format_rupiah(total_keluar))
+            col3.metric("Saldo", format_rupiah(saldo))
+
+            st.subheader("📋 Riwayat Pengeluaran")
+
+            if not df_keluar.empty:
+                df_keluar["tanggal"] = pd.to_datetime(df_keluar["tanggal"]).dt.strftime("%Y-%m-%d")
+                st.dataframe(df_keluar)
+
+                st.download_button(
+                    "⬇️ Download PDF Pengeluaran",
+                    generate_pdf(df_keluar),
+                    "pengeluaran.pdf"
+                )
+
+        if st.button("Logout"):
+            st.session_state.clear()
+            st.rerun()
+
+st.write("© kaskita 2026")
