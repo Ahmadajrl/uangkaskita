@@ -25,7 +25,7 @@ def clean_nominal(n):
     return int(n) if n.isdigit() else 0
 
 # ======================
-# PDF
+# PDF GENERATOR
 # ======================
 def generate_pdf(df):
     buffer = io.BytesIO()
@@ -207,8 +207,9 @@ else:
             st.metric("Total Kas", format_rupiah(df["nominal"].sum()))
             st.dataframe(df)
 
+            # ================= PDF USER TABLE =================
             st.download_button(
-                "⬇️ Download PDF",
+                "⬇️ Download PDF Tabel",
                 generate_pdf(df),
                 "user_kas.pdf"
             )
@@ -228,6 +229,7 @@ else:
         st.subheader("👤 Data Akun Admin")
         st.dataframe(df_admin)
 
+        # ================= PDF ADMIN TABLE =================
         st.download_button(
             "⬇️ Download PDF Akun",
             generate_pdf(df_admin),
@@ -244,6 +246,7 @@ else:
         st.subheader("📊 Semua Data Kas")
         st.dataframe(df_kas)
 
+        # ================= PDF KAS TABLE =================
         st.download_button(
             "⬇️ Download PDF Kas",
             generate_pdf(df_kas),
@@ -307,37 +310,18 @@ else:
                 st.bar_chart(df["status"].value_counts())
 
                 st.subheader("📋 Data Kas")
-                df["tanggal"] = pd.to_datetime(df["tanggal"]).dt.strftime("%Y-%m-%d")
-                st.dataframe(df)
+                df_tampil = df.copy()
+                df_tampil["tanggal"] = pd.to_datetime(df_tampil["tanggal"]).dt.strftime("%Y-%m-%d")
+                st.dataframe(df_tampil)
 
+                # ================= PDF ADMIN TABLE =================
                 st.download_button(
                     "⬇️ Download PDF Kas",
-                    generate_pdf(df),
+                    generate_pdf(df_tampil),
                     "kas_admin.pdf"
                 )
 
-                # ================= CEK STATISTIK SISWA (RESTORED AGAIN) =================
-                st.subheader("📊 Cek Statistik Per Siswa")
-
-                siswa = st.selectbox("Pilih Siswa", sorted(df["nama"].unique()))
-
-                if st.button("Cek Statistik"):
-                    data = df[df["nama"] == siswa]
-                    hasil = data["status"].value_counts()
-
-                    st.bar_chart(hasil)
-
-                    total = len(data)
-                    telat = len(data[data["status"] == "Telat"])
-                    persen = (telat / total) * 100 if total > 0 else 0
-
-                    if persen < 20:
-                        st.success("Performa sangat baik 👍")
-                    elif persen < 50:
-                        st.warning("Perlu peningkatan ⚠️")
-                    else:
-                        st.error("Sering telat ❌")
-
+            # ================= HAPUS =================
             st.subheader("🗑️ Hapus Data")
             konfirmasi = st.checkbox("Konfirmasi")
 
@@ -352,9 +336,9 @@ else:
 
             with col2:
                 if not df.empty:
-                    siswa_del = st.selectbox("Hapus Siswa", df["nama"].unique())
+                    siswa = st.selectbox("Hapus Siswa", df["nama"].unique())
                     if st.button("Hapus Siswa") and konfirmasi:
-                        cursor.execute("DELETE FROM kas WHERE nama=?", (siswa_del,))
+                        cursor.execute("DELETE FROM kas WHERE nama=?", (siswa,))
                         conn.commit()
                         st.rerun()
 
@@ -412,6 +396,7 @@ else:
                 df_keluar["tanggal"] = pd.to_datetime(df_keluar["tanggal"]).dt.strftime("%Y-%m-%d")
                 st.dataframe(df_keluar)
 
+                # ================= PDF PENGELUARAN =================
                 st.download_button(
                     "⬇️ Download PDF Pengeluaran",
                     generate_pdf(df_keluar),
