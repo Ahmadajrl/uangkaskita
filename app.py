@@ -4,6 +4,9 @@ import sqlite3
 import hashlib
 import io
 
+def hash_password(password):
+    return hashlib.sha256(password.encode()).hexdigest()
+
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 from reportlab.lib import colors
 
@@ -100,7 +103,8 @@ defaults = {
     "kelas": None,
     "jurusan": None,
     "page": "role",
-    "menu": "dashboard"
+    "menu": "dashboard",
+    "auth_page": "login"
 }
 
 for k, v in defaults.items():
@@ -140,37 +144,106 @@ if not st.session_state.login and st.session_state.page == "role":
             st.session_state.page = "login"
 
 # ======================
-# LOGIN
+# LOGIN / REGISTER / FORGOT
 # ======================
 elif not st.session_state.login:
 
-    st.title("Login")
+    st.title("Authentication")
 
-    if st.session_state.role == "admin":
+    tab1, tab2, tab3 = st.tabs(["Login", "Register", "Lupa Password"])
+
+    # ================= LOGIN =================
+    with tab1:
+
+        if st.session_state.role == "admin":
+
+            user = st.text_input("Username")
+            pw = st.text_input("Password", type="password")
+            kelas = st.selectbox("Kelas", ["10","11","12"])
+            jurusan = st.text_input("Jurusan")
+
+            if st.button("Login Admin"):
+                hashed = hash_password(pw)
+
+                cursor.execute(
+                    "SELECT * FROM admin WHERE username=? AND password=?",
+                    (user, hashed)
+                )
+                data = cursor.fetchone()
+
+                if data:
+                    st.session_state.login = True
+                    st.session_state.kelas = kelas
+                    st.session_state.jurusan = jurusan.upper()
+                    st.rerun()
+                else:
+                    st.error("Username atau password salah")
+
+        elif st.session_state.role == "dev":
+
+            user = st.text_input("Username Developer")
+            pw = st.text_input("Password Developer", type="password")
+
+            if st.button("Login Developer"):
+                if user == DEV_USER and pw == DEV_PASS:
+                    st.session_state.login = True
+                    st.session_state.role = "dev"
+                    st.rerun()
+                else:
+                    st.error("Login gagal")
+
+    # ================= REGISTER =================
+    with tab2:
+
+        st.subheader("Register Admin")
+
+        new_user = st.text_input("Username Baru")
+        new_pass = st.text_input("Password Baru", type="password")
+        email = st.text_input("Email")
+        kelas = st.selectbox("Kelas Register", ["10","11","12"])
+        jurusan = st.text_input("Jurusan Register")
+
+        if st.button("Daftar"):
+            if new_user and new_pass:
+                hashed = hash_password(new_pass)
+
+                cursor.execute(
+                    "INSERT INTO admin VALUES (NULL,?,?,?,?,?)",
+                    (new_user, hashed, email, kelas, jurusan.upper())
+                )
+                conn.commit()
+
+                st.success("Akun berhasil dibuat")
+            else:
+                st.warning("Isi semua field")
+
+    # ================= LUPA PASSWORD =================
+    with tab3:
+
+        st.subheader("Reset Password")
 
         user = st.text_input("Username")
-        pw = st.text_input("Password", type="password")
-        kelas = st.selectbox("Kelas", ["10","11","12"])
-        jurusan = st.text_input("Jurusan")
+        email = st.text_input("Email Terdaftar")
+        new_pass = st.text_input("Password Baru", type="password")
 
-        if st.button("Login Admin"):
-            st.session_state.login = True
-            st.session_state.kelas = kelas
-            st.session_state.jurusan = jurusan.upper()
-            st.rerun()
+        if st.button("Reset Password"):
+            hashed = hash_password(new_pass)
 
-    elif st.session_state.role == "dev":
+            cursor.execute(
+                "SELECT * FROM admin WHERE username=? AND email=?",
+                (user, email)
+            )
+            data = cursor.fetchone()
 
-        user = st.text_input("Username Developer")
-        pw = st.text_input("Password Developer", type="password")
-
-        if st.button("Login Developer"):
-            if user == DEV_USER and pw == DEV_PASS:
-                st.session_state.login = True
-                st.session_state.role = "dev"
-                st.rerun()
+            if data:
+                cursor.execute(
+                    "UPDATE admin SET password=? WHERE username=?",
+                    (hashed, user)
+                )
+                conn.commit()
+                st.success("Password berhasil diubah")
             else:
-                st.error("Login gagal")
+                st.error("Data tidak ditemukan")
 
 # ======================
 # MAIN APP
