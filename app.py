@@ -157,8 +157,8 @@ elif not st.session_state.login:
 
         if st.session_state.role == "admin":
 
-            user = st.text_input("Username")
-            pw = st.text_input("Password", type="password")
+            user = st.text_input("Username", key="login_user")
+            pw = st.text_input("Password", type="password", key="login_pass")
             kelas = st.selectbox("Kelas", ["10","11","12"])
             jurusan = st.text_input("Jurusan")
 
@@ -197,12 +197,10 @@ elif not st.session_state.login:
 
         st.subheader("Register Admin")
 
-        new_user = st.text_input("Username Baru")
-        new_pass = st.text_input("Password Baru", type="password")
-        email = st.text_input("Email")
-        kelas = st.selectbox("Kelas Register", ["10","11","12"])
-        jurusan = st.text_input("Jurusan Register")
-
+        new_user = st.text_input("Username Baru", key="reg_user")
+        new_pass = st.text_input("Password Baru", type="password", key="reg_pass")
+        email = st.text_input("Email", key="reg_email")
+        jurusan = st.text_input("Jurusan Register", key="reg_jurusan")
         if st.button("Daftar"):
             if new_user and new_pass:
                 hashed = hash_password(new_pass)
@@ -222,9 +220,9 @@ elif not st.session_state.login:
 
         st.subheader("Reset Password")
 
-        user = st.text_input("Username")
-        email = st.text_input("Email Terdaftar")
-        new_pass = st.text_input("Password Baru", type="password")
+        user = st.text_input("Username", key="forgot_user")
+        email = st.text_input("Email Terdaftar", key="forgot_email")
+        new_pass = st.text_input("Password Baru", type="password", key="forgot_pass")
 
         if st.button("Reset Password"):
             hashed = hash_password(new_pass)
