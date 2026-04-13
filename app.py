@@ -179,83 +179,8 @@ else:
 
     st.title("📊 Dashboard KAS")
 
-    # ================= USER =================
-    if st.session_state.role == "user":
-
-        df = pd.read_sql("SELECT * FROM kas", conn)
-
-        if not df.empty:
-            df["tanggal"] = pd.to_datetime(df["tanggal"])
-            df["bulan"] = df["tanggal"].dt.strftime("%B %Y")
-            df["tanggal"] = df["tanggal"].dt.strftime("%Y-%m-%d")
-
-            col1, col2, col3 = st.columns(3)
-
-            with col1:
-                fk = st.selectbox("Kelas", sorted(df["kelas"].unique()))
-            with col2:
-                fj = st.selectbox("Jurusan", sorted(df["jurusan"].unique()))
-            with col3:
-                fb = st.selectbox("Bulan", sorted(df["bulan"].unique()))
-
-            df = df[
-                (df["kelas"] == fk) &
-                (df["jurusan"] == fj) &
-                (df["bulan"] == fb)
-            ]
-
-            st.metric("Total Kas", format_rupiah(df["nominal"].sum()))
-            st.dataframe(df)
-
-            st.download_button(
-                "⬇️ Download PDF",
-                generate_pdf(df),
-                "user_kas.pdf"
-            )
-
-        if st.button("Logout"):
-            st.session_state.clear()
-            st.rerun()
-
-    # ================= DEVELOPER =================
-    elif st.session_state.role == "dev":
-
-        st.subheader("🛠️ Developer Panel")
-
-        df_admin = pd.read_sql("SELECT * FROM admin", conn)
-        df_kas = pd.read_sql("SELECT * FROM kas", conn)
-
-        st.subheader("👤 Data Akun Admin")
-        st.dataframe(df_admin)
-
-        st.download_button(
-            "⬇️ Download PDF Akun",
-            generate_pdf(df_admin),
-            "akun_admin.pdf"
-        )
-
-        if not df_admin.empty:
-            id_del = st.number_input("Hapus ID Akun", step=1)
-            if st.button("Hapus Akun"):
-                cursor.execute("DELETE FROM admin WHERE id=?", (id_del,))
-                conn.commit()
-                st.rerun()
-
-        st.subheader("📊 Semua Data Kas")
-        st.dataframe(df_kas)
-
-        st.download_button(
-            "⬇️ Download PDF Kas",
-            generate_pdf(df_kas),
-            "kas_all.pdf"
-        )
-
-        if st.button("Logout"):
-            st.session_state.clear()
-            st.rerun()
-
     # ================= ADMIN =================
-    elif st.session_state.role == "admin":
+    if st.session_state.role == "admin":
 
         st.success(f"Kelas {st.session_state.kelas} - {st.session_state.jurusan}")
 
@@ -294,32 +219,33 @@ else:
                 conn.commit()
                 st.rerun()
 
-            df = pd.read_sql(
-                "SELECT * FROM kas WHERE kelas=? AND jurusan=?",
-                conn,
-                params=(st.session_state.kelas, st.session_state.jurusan)
-            )
+            # ✅ FIX ERROR DI SINI
+            if st.session_state.kelas and st.session_state.jurusan:
+                df = pd.read_sql(
+                    "SELECT * FROM kas WHERE kelas=? AND jurusan=?",
+                    conn,
+                    params=(st.session_state.kelas, st.session_state.jurusan)
+                )
+            else:
+                df = pd.DataFrame()
 
             if not df.empty:
 
-                st.subheader("📈 Statistik")
                 st.metric("Total Kas", format_rupiah(df["nominal"].sum()))
                 st.bar_chart(df["status"].value_counts())
 
-                st.subheader("📋 Data Kas")
-                df["tanggal"] = pd.to_datetime(df["tanggal"]).dt.strftime("%Y-%m-%d")
                 st.dataframe(df)
 
                 st.download_button(
-                    "⬇️ Download PDF Kas",
+                    "⬇️ Download PDF",
                     generate_pdf(df),
-                    "kas_admin.pdf"
+                    "kas.pdf"
                 )
 
-                # ================= CEK STATISTIK SISWA (RESTORED AGAIN) =================
+                # ✅ CEK STATISTIK SISWA
                 st.subheader("📊 Cek Statistik Per Siswa")
 
-                siswa = st.selectbox("Pilih Siswa", sorted(df["nama"].unique()))
+                siswa = st.selectbox("Pilih Siswa", df["nama"].unique())
 
                 if st.button("Cek Statistik"):
                     data = df[df["nama"] == siswa]
@@ -337,33 +263,6 @@ else:
                         st.warning("Perlu peningkatan ⚠️")
                     else:
                         st.error("Sering telat ❌")
-
-            st.subheader("🗑️ Hapus Data")
-            konfirmasi = st.checkbox("Konfirmasi")
-
-            col1, col2, col3 = st.columns(3)
-
-            with col1:
-                id_hapus = st.number_input("Hapus ID", step=1)
-                if st.button("Hapus ID") and konfirmasi:
-                    cursor.execute("DELETE FROM kas WHERE id=?", (id_hapus,))
-                    conn.commit()
-                    st.rerun()
-
-            with col2:
-                if not df.empty:
-                    siswa_del = st.selectbox("Hapus Siswa", df["nama"].unique())
-                    if st.button("Hapus Siswa") and konfirmasi:
-                        cursor.execute("DELETE FROM kas WHERE nama=?", (siswa_del,))
-                        conn.commit()
-                        st.rerun()
-
-            with col3:
-                if st.button("Hapus Semua") and konfirmasi:
-                    cursor.execute("DELETE FROM kas WHERE kelas=? AND jurusan=?",
-                                   (st.session_state.kelas, st.session_state.jurusan))
-                    conn.commit()
-                    st.rerun()
 
         # ================= PENGELUARAN =================
         elif st.session_state.menu == "pengeluaran":
@@ -385,41 +284,17 @@ else:
                 )
                 conn.commit()
 
-            df_keluar = pd.read_sql(
-                "SELECT * FROM pengeluaran WHERE kelas=? AND jurusan=?",
-                conn,
-                params=(st.session_state.kelas, st.session_state.jurusan)
+            df_keluar = pd.read_sql("SELECT * FROM pengeluaran", conn)
+            st.dataframe(df_keluar)
+
+            st.download_button(
+                "⬇️ Download PDF",
+                generate_pdf(df_keluar),
+                "pengeluaran.pdf"
             )
 
-            df_masuk = pd.read_sql(
-                "SELECT nominal FROM kas WHERE kelas=? AND jurusan=?",
-                conn,
-                params=(st.session_state.kelas, st.session_state.jurusan)
-            )
-
-            total_masuk = df_masuk["nominal"].sum() if not df_masuk.empty else 0
-            total_keluar = df_keluar["nominal"].sum() if not df_keluar.empty else 0
-            saldo = total_masuk - total_keluar
-
-            col1, col2, col3 = st.columns(3)
-            col1.metric("Total Kas", format_rupiah(total_masuk))
-            col2.metric("Total Pengeluaran", format_rupiah(total_keluar))
-            col3.metric("Saldo", format_rupiah(saldo))
-
-            st.subheader("📋 Riwayat Pengeluaran")
-
-            if not df_keluar.empty:
-                df_keluar["tanggal"] = pd.to_datetime(df_keluar["tanggal"]).dt.strftime("%Y-%m-%d")
-                st.dataframe(df_keluar)
-
-                st.download_button(
-                    "⬇️ Download PDF Pengeluaran",
-                    generate_pdf(df_keluar),
-                    "pengeluaran.pdf"
-                )
-
-        if st.button("Logout"):
-            st.session_state.clear()
-            st.rerun()
+    if st.button("Logout"):
+        st.session_state.clear()
+        st.rerun()
 
 st.write("© kaskita 2026")
