@@ -112,7 +112,7 @@ def format_rupiah(angka):
     return "Rp {:,}".format(int(angka)).replace(",", ".")
 
 def hdivider():
-    st.markdown("---")
+    st.markdown("""---""", unsafe_allow_html=True)
 
 def page_header(title, subtitle=None):
     st.title(title)
@@ -123,19 +123,19 @@ def page_header(title, subtitle=None):
 # SIDEBAR UI
 # ======================
 def render_logo_sidebar():
-    st.markdown("### 💳 KasKita")
+    st.markdown("""💳 KasKita""", unsafe_allow_html=True)
 
 def info_badge_sidebar(text, color="#09F289", bg="rgba(9,242,137,0.12)"):
-    st.markdown(f"**{text}**")
+    st.markdown(f"""{text}""", unsafe_allow_html=True)
 
 def sidebar_label(text):
-    st.markdown(f"### {text}")
+    st.markdown(f""" {text}""", unsafe_allow_html=True)
 
 def sidebar_sep():
-    st.markdown("---")
+    st.markdown("""---""", unsafe_allow_html=True)
 
 def sidebar_user(text):
-    st.markdown(f"👤 {text}")
+    st.markdown(f"""👤 {text}""", unsafe_allow_html=True)
 
 DEV_USER = "developer"
 DEV_PASS = "kaskita"
@@ -242,7 +242,7 @@ if not st.session_state.login and st.session_state.page == "role":
             st.session_state.login = True
             st.rerun()
 
-    st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
+    st.markdown("""<div style='height:1rem'></div>""", unsafe_allow_html=True)
 
     # ================= DEV LOGIN =================
     _, mid, _ = st.columns([1, 2, 1])
@@ -299,7 +299,7 @@ elif not st.session_state.login and st.session_state.page == "login":
         with c2:
             jurusan = st.text_input("Jurusan", placeholder="Contoh: RPL")
 
-        st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
+        st.markdown("""<div style='height:6px'></div>""", unsafe_allow_html=True)
 
         if st.button("Masuk ke Dashboard →", type="primary", use_container_width=True):
             if not jurusan.strip():
@@ -310,9 +310,9 @@ elif not st.session_state.login and st.session_state.page == "login":
                 st.session_state.jurusan = jurusan.upper()
                 st.rerun()
 
-        st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown("""</div>""", unsafe_allow_html=True)
 
-        st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+        st.markdown("""<div style='height:8px'></div>""", unsafe_allow_html=True)
 
         if st.button("← Kembali pilih role", use_container_width=True):
             st.session_state.page = "role"
@@ -343,7 +343,7 @@ else:
         with st.sidebar:
             sidebar_sep()
             sidebar_user("User Publik")
-            st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+            st.markdown("""<div style='height:8px'></div>""", unsafe_allow_html=True)
 
             if st.button("Keluar", use_container_width=True):
                 st.session_state.clear()
@@ -369,7 +369,7 @@ else:
             m2.metric("Jumlah transaksi", f"{len(df)}")
             m3.metric("Pembayaran telat", f"{len(df[df['status'] == 'Telat'])} siswa")
 
-            st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+            st.markdown("""<div style='height:8px'></div>""", unsafe_allow_html=True)
 
             tab1, tab2 = st.tabs(["📋 Tabel data", "📊 Statistik"])
 
@@ -391,7 +391,7 @@ else:
                 )
 
             with tab2:
-                st.markdown("**Status pembayaran**")
+                st.markdown("""Status pembayaran""", unsafe_allow_html=True)
                 st.bar_chart(df["status"].value_counts())
 
     # ==================== DEVELOPER ====================
@@ -411,7 +411,7 @@ else:
             sidebar_sep()
             sidebar_user("Developer")
 
-            st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+            st.markdown("""<div style='height:8px'></div>""", unsafe_allow_html=True)
 
             if st.button("Keluar", use_container_width=True):
                 st.session_state.clear()
@@ -426,8 +426,8 @@ else:
         if menu_dev == "Akun Admin":
 
             st.markdown(
-                "<div style='font-size:14px;font-weight:500;color:#01023B;margin-bottom:.75rem;'>"
-                "Daftar akun admin</div>",
+                """<div style='font-size:14px;font-weight:500;color:#01023B;margin-bottom:.75rem;'>"
+                "Daftar akun admin</div>""",
                 unsafe_allow_html=True
             )
 
@@ -445,10 +445,10 @@ else:
 
             hdivider()
 
-            st.markdown("**Hapus akun berdasarkan ID**")
+            st.markdown("""Hapus akun berdasarkan ID""", unsafe_allow_html=True)
             id_del = st.number_input("ID akun", min_value=1, step=1)
 
-            if st.button("Hapus akun", type="primary"):
+            if st.button("""Hapus akun", type="primary"""):
                 cursor.execute("DELETE FROM admin WHERE id=?", (int(id_del),))
                 conn.commit()
                 st.success(f"Akun ID {int(id_del)} berhasil dihapus.")
@@ -457,10 +457,10 @@ else:
         # ===== SEMUA DATA KAS =====
         else:
 
-            st.markdown(
+            st.markdown("""
                 "<div style='font-size:14px;font-weight:500;color:#01023B;margin-bottom:.75rem;'>"
                 "Semua data kas</div>",
-                unsafe_allow_html=True
+                unsafe_allow_html=True """, unsafe_allow_html=True
             )
 
             if df_kas.empty:
