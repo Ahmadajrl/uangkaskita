@@ -11,7 +11,68 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 from reportlab.lib import colors
 
 st.set_page_config(layout="wide")
+st.set_page_config(
+    page_title="KAS KITA",
+    page_icon="💰",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+st.markdown("""
+<style>
 
+/* BACKGROUND */
+.stApp{
+    background: linear-gradient(135deg,#01023B,#09124f,#10297a);
+    color:white;
+}
+
+/* FONT */
+html, body, [class*="css"]{
+    font-family: 'Segoe UI', sans-serif;
+}
+
+/* SIDEBAR */
+section[data-testid="stSidebar"]{
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(10px);
+}
+
+/* BUTTON */
+.stButton>button{
+    width:100%;
+    border:none;
+    border-radius:12px;
+    padding:12px;
+    background: linear-gradient(90deg,#00c6ff,#0072ff);
+    color:white;
+    font-weight:bold;
+}
+
+.stButton>button:hover{
+    transform:scale(1.03);
+}
+
+/* INPUT */
+.stTextInput input,
+.stNumberInput input,
+.stDateInput input{
+    border-radius:12px !important;
+    border:1px solid #4da6ff !important;
+}
+
+/* CARD METRIC */
+[data-testid="metric-container"]{
+    background: rgba(255,255,255,0.07);
+    border-radius:15px;
+    padding:15px;
+}
+
+/* HIDE */
+#MainMenu {visibility:hidden;}
+footer {visibility:hidden;}
+
+</style>
+""", unsafe_allow_html=True)
 DEV_USER = "developer"
 DEV_PASS = "kaskita"
 
@@ -114,10 +175,20 @@ for k, v in defaults.items():
 # ======================
 # LOGO
 # ======================
-col1, col2, col3 = st.columns([1,2,1])
-with col2:
-    st.image("logo.png", use_container_width=True)
+st.markdown("""<br>""", unsafe_allow_html=True)
 
+col1,col2,col3 = st.columns([1,1.5,1])
+
+with col2:
+    st.image("logo.png", width=230)
+
+st.markdown(
+"""
+<h1 style='text-align:center;color:white;'>💰 KAS KITA</h1>
+<p style='text-align:center;color:#dddddd;'>Aplikasi Pencatatan Keuangan Kas Modern</p>
+""",
+unsafe_allow_html=True
+)
 # ======================
 # ROLE
 # ======================
@@ -493,4 +564,8 @@ else:
             st.session_state.clear()
             st.rerun()
 
-st.write("© kaskita 2026")
+st.markdown("""
+<div style='text-align:center;margin-top:40px;color:#cccccc'>
+© KASKITA 2026 | Design by Mumtaz Studio
+</div>
+""", unsafe_allow_html=True)
