@@ -180,7 +180,7 @@ st.markdown("""<br>""", unsafe_allow_html=True)
 col1,col2,col3 = st.columns([1,1.5,1])
 
 with col2:
-    st.image("logo.png", width=230)
+    st.image("logo.png", width=500)
 
 st.markdown(
 """
