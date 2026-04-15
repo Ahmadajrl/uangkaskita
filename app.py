@@ -46,12 +46,14 @@ section[data-testid="stSidebar"]{
     background:#09F289;
     color:#01023B;
     font-weight:bold;
-    box-shadow:0 0 15px #09F289;
+    font-size:16px;
+    transition:0.3s;
 }
 
 .stButton>button:hover{
-    box-shadow:0 0 25px #09F289;
-    transform:scale(1.04);
+    background:#07d978;
+    color:#ffffff;
+    transform:scale(1.03);
 }
 
 /* INPUT */
