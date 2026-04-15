@@ -13,7 +13,7 @@ from reportlab.lib import colors
 st.set_page_config(layout="wide")
 st.set_page_config(
     page_title="KAS KITA",
-    page_icon="💰",
+    page_icon="icon.png",
     layout="wide",
     initial_sidebar_state="expanded"
 )
