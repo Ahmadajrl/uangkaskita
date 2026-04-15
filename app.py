@@ -11,6 +11,12 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 from reportlab.lib import colors
 
 st.set_page_config(layout="wide")
+st.set_page_config(
+    page_title="KAS KITA",
+    page_icon="💰",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 st.markdown("""
 <style>
 
