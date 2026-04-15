@@ -43,13 +43,15 @@ section[data-testid="stSidebar"]{
     border:none;
     border-radius:12px;
     padding:12px;
-    background: linear-gradient(90deg,#00c6ff,#0072ff);
-    color:white;
+    background:#09F289;
+    color:#01023B;
     font-weight:bold;
+    box-shadow:0 0 15px #09F289;
 }
 
 .stButton>button:hover{
-    transform:scale(1.03);
+    box-shadow:0 0 25px #09F289;
+    transform:scale(1.04);
 }
 
 /* INPUT */
