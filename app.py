@@ -194,26 +194,23 @@ if not st.session_state.login and st.session_state.page == "role":
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-col1, col2, col3 = st.columns([1.5,2,1.5])
+    col1, col2, col3 = st.columns(3)
 
-with col2:
+    with col1:
+        if st.button("Admin"):
+            st.session_state.role = "admin"
+            st.session_state.page = "login"
 
-    if st.button("👨‍💼 Admin", use_container_width=True):
-        st.session_state.role = "admin"
-        st.session_state.page = "login"
+    with col2:
+        if st.button("User"):
+            st.session_state.role = "user"
+            st.session_state.login = True
+            st.rerun()
 
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    if st.button("👨‍🎓 User", use_container_width=True):
-        st.session_state.role = "user"
-        st.session_state.login = True
-        st.rerun()
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    if st.button("👨‍💻 Developer", use_container_width=True):
-        st.session_state.role = "dev"
-        st.session_state.page = "login"
+    with col3:
+        if st.button("Developer"):
+            st.session_state.role = "dev"
+            st.session_state.page = "login"
 
 # ======================
 # LOGIN / REGISTER / FORGOT
