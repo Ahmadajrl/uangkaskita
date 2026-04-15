@@ -185,14 +185,6 @@ col1,col2,col3 = st.columns([1,1.5,1])
 
 with col2:
     st.image("logo.png", width=500)
-
-st.markdown(
-"""
-<h1 style='text-align:center;color:white;'>💰 KAS KITA</h1>
-<p style='text-align:center;color:#dddddd;'>Aplikasi Pencatatan Keuangan Kas Modern</p>
-""",
-unsafe_allow_html=True
-)
 # ======================
 # ROLE
 # ======================
