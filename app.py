@@ -14,4 +14,4 @@
     with col3:
         if st.button("Developer"):
             st.session_state.role = "dev"
-            st.session_state.page = "login"
+            st.session_state.page = "login"s
