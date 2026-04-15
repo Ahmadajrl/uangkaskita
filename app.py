@@ -562,6 +562,6 @@ else:
 
 st.markdown("""
 <div style='text-align:center;margin-top:40px;color:#cccccc'>
-© KASKITA 2026 | Design by Mumtaz Studio
+© KASKITA 2026 | Design by Kelompok 3
 </div>
 """, unsafe_allow_html=True)
