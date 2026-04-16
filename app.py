@@ -263,7 +263,7 @@ st.markdown("<br>", unsafe_allow_html=True)
     # ======================
     # BUTTON LOGIN TENGAH
     # ======================
-    col1, col2, col3 = st.columns([1.4,2.2,1.4])
+col1, col2, col3 = st.columns([1.4,2.2,1.4])
 
     with col2:
 
