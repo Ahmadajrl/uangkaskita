@@ -230,7 +230,7 @@ if not st.session_state.login and st.session_state.page == "role":
 
     st.markdown("""
     <div class="login-box">
-        <div class="icon-login">icon.png</div>
+        <div class="icon-login">💰</div>
         <div class="title-login">KAS KITA</div>
         <div class="sub-login">
             Aplikasi Keuangan Kas Modern <br>
