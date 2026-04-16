@@ -233,7 +233,10 @@ if not st.session_state.login and st.session_state.page == "role":
     col1, col2, col3 = st.columns([1,1,1])
 
     with col2:
-        st.image("icon.png", width=95)
+        try:
+            st.image("icon.png", width=95)
+        except:
+            st.warning("Logo icon.png tidak ditemukan")
 
     # ======================
     # BOX LOGIN
