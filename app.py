@@ -265,26 +265,26 @@ st.markdown("<br>", unsafe_allow_html=True)
     # ======================
 col1, col2, col3 = st.columns([1.4,2.2,1.4])
 
-    with col2:
+with col2:
 
-        if st.button("👨‍💼 Login Admin", use_container_width=True):
-            st.session_state.role = "admin"
-            st.session_state.page = "login"
-            st.rerun()
+    if st.button("👨‍💼 Login Admin", use_container_width=True):
+        st.session_state.role = "admin"
+        st.session_state.page = "login"
+        st.rerun()
 
-        st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
 
-        if st.button("👨‍🎓 Masuk Sebagai User", use_container_width=True):
-            st.session_state.role = "user"
-            st.session_state.login = True
-            st.rerun()
+    if st.button("👨‍🎓 Masuk Sebagai User", use_container_width=True):
+        st.session_state.role = "user"
+        st.session_state.login = True
+        st.rerun()
 
-        st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
 
-        if st.button("👨‍💻 Developer Mode", use_container_width=True):
-            st.session_state.role = "dev"
-            st.session_state.page = "login"
-            st.rerun()
+    if st.button("👨‍💻 Developer Mode", use_container_width=True):
+        st.session_state.role = "dev"
+        st.session_state.page = "login"
+        st.rerun()
 # ======================
 # LOGIN / REGISTER / FORGOT
 # ======================
