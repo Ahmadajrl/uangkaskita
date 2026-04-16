@@ -242,12 +242,12 @@ if not st.session_state.login and st.session_state.page == "role":
         """
         <div class="login-box">
 
-            <h1 class="title-login">KAS KITA</h1>
+            <div class="title-login">KAS KITA</div>
 
-            <p class="sub-login">
+            <div class="sub-login">
                 Aplikasi Keuangan Kas Modern <br>
                 Smart School Finance System
-            </p>
+            </div>
 
         </div>
         """,
