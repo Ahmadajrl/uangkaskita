@@ -189,10 +189,11 @@ with col2:
 # ROLE
 # ======================
 if not st.session_state.login and st.session_state.page == "role":
-import base64
+    import base64
 
-with open("icon.png", "rb") as img_file:
-    img_base64 = base64.b64encode(img_file.read()).decode()
+    with open("icon.png", "rb") as img_file:
+        img_base64 = base64.b64encode(img_file.read()).decode()
+        
     st.markdown("""
     <style>
 
