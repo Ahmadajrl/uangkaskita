@@ -186,7 +186,7 @@ col1,col2,col3 = st.columns([1,1.5,1])
 with col2:
     st.image("logo.png", width=500)
 # ======================
-# ROLE / HALAMAN PILIH LOGIN (FINAL REVISI)
+# ROLE / HALAMAN PILIH LOGIN (FINAL FIX)
 # ======================
 if not st.session_state.login and st.session_state.page == "role":
 
@@ -205,7 +205,7 @@ if not st.session_state.login and st.session_state.page == "role":
         text-align:center;
         max-width:520px;
         margin:auto;
-        margin-top:30px;
+        margin-top:20px;
         border:1px solid rgba(255,255,255,0.08);
     }
 
@@ -214,14 +214,14 @@ if not st.session_state.login and st.session_state.page == "role":
         font-weight:800;
         color:white;
         margin-top:10px;
-        margin-bottom:8px;
+        margin-bottom:10px;
     }
 
     .sub-login{
         color:#d9d9d9;
         font-size:17px;
-        margin-bottom:5px;
         line-height:1.7;
+        margin-bottom:5px;
     }
 
     </style>
@@ -233,31 +233,29 @@ if not st.session_state.login and st.session_state.page == "role":
     col1, col2, col3 = st.columns([1,1,1])
 
     with col2:
-        try:
-            st.image("icon.png", width=95)
-        except:
-            st.warning("Logo icon.png tidak ditemukan")
+        st.image("icon.png", width=95)
 
     # ======================
     # BOX LOGIN
     # ======================
-    st.markdown("""
-    <div class="login-box">
+    st.markdown(
+        """
+        <div class="login-box">
+            <div class="title-login">KAS KITA</div>
 
-        <div class="title-login">KAS KITA</div>
-
-        <div class="sub-login">
-            Aplikasi Keuangan Kas Modern <br>
-            Smart School Finance System
+            <div class="sub-login">
+                Aplikasi Keuangan Kas Modern <br>
+                Smart School Finance System
+            </div>
         </div>
-
-    </div>
-    """, unsafe_allow_html=True)
+        """,
+        unsafe_allow_html=True
+    )
 
     st.markdown("<br>", unsafe_allow_html=True)
 
     # ======================
-    # BUTTON LOGIN TENGAH
+    # BUTTON LOGIN
     # ======================
     col1, col2, col3 = st.columns([1.4,2.2,1.4])
 
