@@ -186,7 +186,7 @@ col1,col2,col3 = st.columns([1,1.5,1])
 with col2:
     st.image("logo.png", width=500)
 # ======================
-# ROLE / HALAMAN PILIH LOGIN (FINAL FIX)
+# ROLE / HALAMAN PILIH LOGIN (FINAL REVISI)
 # ======================
 if not st.session_state.login and st.session_state.page == "role":
 
@@ -205,7 +205,7 @@ if not st.session_state.login and st.session_state.page == "role":
         text-align:center;
         max-width:520px;
         margin:auto;
-        margin-top:20px;
+        margin-top:30px;
         border:1px solid rgba(255,255,255,0.08);
     }
 
@@ -214,14 +214,14 @@ if not st.session_state.login and st.session_state.page == "role":
         font-weight:800;
         color:white;
         margin-top:10px;
-        margin-bottom:10px;
+        margin-bottom:8px;
     }
 
     .sub-login{
         color:#d9d9d9;
         font-size:17px;
-        line-height:1.7;
         margin-bottom:5px;
+        line-height:1.7;
     }
 
     </style>
@@ -238,24 +238,23 @@ if not st.session_state.login and st.session_state.page == "role":
     # ======================
     # BOX LOGIN
     # ======================
-    st.markdown(
-        """
-        <div class="login-box">
-            <div class="title-login">KAS KITA</div>
+    st.markdown("""
+    <div class="login-box">
 
-            <div class="sub-login">
-                Aplikasi Keuangan Kas Modern <br>
-                Smart School Finance System
-            </div>
+        <div class="title-login">KAS KITA</div>
+
+        <div class="sub-login">
+            Aplikasi Keuangan Kas Modern <br>
+            Smart School Finance System
         </div>
-        """,
-        unsafe_allow_html=True
-    )
+
+    </div>
+    """, unsafe_allow_html=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
 
     # ======================
-    # BUTTON LOGIN
+    # BUTTON LOGIN TENGAH
     # ======================
     col1, col2, col3 = st.columns([1.4,2.2,1.4])
 
