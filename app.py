@@ -186,7 +186,7 @@ col1,col2,col3 = st.columns([1,1.5,1])
 with col2:
     st.image("logo.png", width=500)
 # ======================
-# ROLE / HALAMAN PILIH LOGIN (FINAL REVISI)
+# ROLE / HALAMAN PILIH LOGIN (FINAL FIX)
 # ======================
 if not st.session_state.login and st.session_state.page == "role":
 
@@ -238,53 +238,49 @@ if not st.session_state.login and st.session_state.page == "role":
     # ======================
     # BOX LOGIN
     # ======================
-# ======================
-# BOX LOGIN FINAL FIX
-# ======================
+    st.markdown(
+        """
+        <div class="login-box">
 
-st.markdown(
-    """
-    <div class="login-box">
+            <h1 class="title-login">KAS KITA</h1>
 
-        <h1 class="title-login">KAS KITA</h1>
+            <p class="sub-login">
+                Aplikasi Keuangan Kas Modern <br>
+                Smart School Finance System
+            </p>
 
-        <p class="sub-login">
-            Aplikasi Keuangan Kas Modern <br>
-            Smart School Finance System
-        </p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
-    </div>
-    """,
-    unsafe_allow_html=True
-)
-
-st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
 
     # ======================
     # BUTTON LOGIN TENGAH
     # ======================
-col1, col2, col3 = st.columns([1.4,2.2,1.4])
+    col1, col2, col3 = st.columns([1.4,2.2,1.4])
 
-with col2:
+    with col2:
 
-    if st.button("👨‍💼 Login Admin", use_container_width=True):
-        st.session_state.role = "admin"
-        st.session_state.page = "login"
-        st.rerun()
+        if st.button("👨‍💼 Login Admin", use_container_width=True):
+            st.session_state.role = "admin"
+            st.session_state.page = "login"
+            st.rerun()
 
-    st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
 
-    if st.button("👨‍🎓 Masuk Sebagai User", use_container_width=True):
-        st.session_state.role = "user"
-        st.session_state.login = True
-        st.rerun()
+        if st.button("👨‍🎓 Masuk Sebagai User", use_container_width=True):
+            st.session_state.role = "user"
+            st.session_state.login = True
+            st.rerun()
 
-    st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
 
-    if st.button("👨‍💻 Developer Mode", use_container_width=True):
-        st.session_state.role = "dev"
-        st.session_state.page = "login"
-        st.rerun()
+        if st.button("👨‍💻 Developer Mode", use_container_width=True):
+            st.session_state.role = "dev"
+            st.session_state.page = "login"
+            st.rerun()
 # ======================
 # LOGIN / REGISTER / FORGOT
 # ======================
