@@ -186,101 +186,30 @@ col1,col2,col3 = st.columns([1,1.5,1])
 with col2:
     st.image("logo.png", width=500)
 # ======================
-# ROLE / HALAMAN PILIH LOGIN (FINAL FIX)
+# ROLE
 # ======================
 if not st.session_state.login and st.session_state.page == "role":
 
-    # ======================
-    # CSS LOGIN PREMIUM
-    # ======================
-    st.markdown("""
-    <style>
+    st.title("SELAMAT DATANG DI KAS KITA")
 
-    .login-box{
-        background: rgba(255,255,255,0.08);
-        padding:40px;
-        border-radius:28px;
-        backdrop-filter: blur(14px);
-        box-shadow:0 15px 35px rgba(0,0,0,0.35);
-        text-align:center;
-        max-width:520px;
-        margin:auto;
-        margin-top:30px;
-        border:1px solid rgba(255,255,255,0.08);
-    }
+    col1, col2, col3 = st.columns(3)
 
-    .title-login{
-        font-size:42px;
-        font-weight:800;
-        color:white;
-        margin-top:10px;
-        margin-bottom:8px;
-    }
-
-    .sub-login{
-        color:#d9d9d9;
-        font-size:17px;
-        margin-bottom:5px;
-        line-height:1.7;
-    }
-
-    </style>
-    """, unsafe_allow_html=True)
-
-    # ======================
-    # LOGO TENGAH
-    # ======================
-    col1, col2, col3 = st.columns([1,1,1])
-
-    with col2:
-        st.image("icon.png", width=95)
-
-    # ======================
-    # BOX LOGIN
-    # ======================
-    st.markdown(
-        """
-        <div class="login-box">
-
-            <div class="title-login">KAS KITA</div>
-
-            <div class="sub-login">
-                Aplikasi Keuangan Kas Modern <br>
-                Smart School Finance System
-            </div>
-
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    # ======================
-    # BUTTON LOGIN TENGAH
-    # ======================
-    col1, col2, col3 = st.columns([1.4,2.2,1.4])
-
-    with col2:
-
-        if st.button("👨‍💼 Login Admin", use_container_width=True):
+    with col1:
+        if st.button("Admin"):
             st.session_state.role = "admin"
             st.session_state.page = "login"
-            st.rerun()
 
-        st.markdown("<br>", unsafe_allow_html=True)
-
-        if st.button("👨‍🎓 Masuk Sebagai User", use_container_width=True):
+    with col2:
+        if st.button("User"):
             st.session_state.role = "user"
             st.session_state.login = True
             st.rerun()
 
-        st.markdown("<br>", unsafe_allow_html=True)
-
-        if st.button("👨‍💻 Developer Mode", use_container_width=True):
+    with col3:
+        if st.button("Developer"):
             st.session_state.role = "dev"
             st.session_state.page = "login"
-            st.rerun()
+
 # ======================
 # LOGIN / REGISTER / FORGOT
 # ======================
