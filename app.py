@@ -186,18 +186,16 @@ col1,col2,col3 = st.columns([1,1.5,1])
 with col2:
     st.image("logo.png", width=500)
 # ======================
-# ROLE
+# ROLE / HALAMAN PILIH LOGIN (FINAL REVISI)
 # ======================
 if not st.session_state.login and st.session_state.page == "role":
-    import base64
 
-    with open("icon.png", "rb") as img_file:
-        img_base64 = base64.b64encode(img_file.read()).decode()
-        
+    # ======================
+    # CSS LOGIN PREMIUM
+    # ======================
     st.markdown("""
     <style>
 
-    /* CENTER LOGIN BOX */
     .login-box{
         background: rgba(255,255,255,0.08);
         padding:40px;
@@ -215,46 +213,57 @@ if not st.session_state.login and st.session_state.page == "role":
         font-size:42px;
         font-weight:800;
         color:white;
-        margin-bottom:5px;
+        margin-top:10px;
+        margin-bottom:8px;
     }
 
     .sub-login{
         color:#d9d9d9;
         font-size:17px;
-        margin-bottom:30px;
-    }
-
-    .icon-login{
-        font-size:65px;
-        margin-bottom:15px;
+        margin-bottom:5px;
+        line-height:1.7;
     }
 
     </style>
     """, unsafe_allow_html=True)
 
+    # ======================
+    # LOGO TENGAH
+    # ======================
+    col1, col2, col3 = st.columns([1,1,1])
+
+    with col2:
+        st.image("icon.png", width=95)
+
+    # ======================
+    # BOX LOGIN
+    # ======================
     st.markdown("""
     <div class="login-box">
-        <div class="icon-login">
-            <img src="data:image/png;base64,{img_base64}" width="85">
-        </div>
+
         <div class="title-login">KAS KITA</div>
+
         <div class="sub-login">
             Aplikasi Keuangan Kas Modern <br>
             Smart School Finance System
         </div>
+
     </div>
     """, unsafe_allow_html=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Tombol tengah premium
-    col1,col2,col3 = st.columns([1.4,2.2,1.4])
+    # ======================
+    # BUTTON LOGIN TENGAH
+    # ======================
+    col1, col2, col3 = st.columns([1.4,2.2,1.4])
 
     with col2:
 
         if st.button("👨‍💼 Login Admin", use_container_width=True):
             st.session_state.role = "admin"
             st.session_state.page = "login"
+            st.rerun()
 
         st.markdown("<br>", unsafe_allow_html=True)
 
@@ -268,6 +277,7 @@ if not st.session_state.login and st.session_state.page == "role":
         if st.button("👨‍💻 Developer Mode", use_container_width=True):
             st.session_state.role = "dev"
             st.session_state.page = "login"
+            st.rerun()
 # ======================
 # LOGIN / REGISTER / FORGOT
 # ======================
