@@ -188,28 +188,86 @@ with col2:
 # ======================
 # ROLE
 # ======================
+# ==================================================
+# HALAMAN LOGIN PREMIUM ANDROID / IPHONE STYLE
+# Tempel menggantikan bagian:
+# if not st.session_state.login and st.session_state.page == "role":
+# ==================================================
+
 if not st.session_state.login and st.session_state.page == "role":
 
-    st.title("SELAMAT DATANG DI KAS KITA")
+    st.markdown("""
+    <style>
 
-    col1, col2, col3 = st.columns(3)
+    /* CENTER LOGIN BOX */
+    .login-box{
+        background: rgba(255,255,255,0.08);
+        padding:40px;
+        border-radius:28px;
+        backdrop-filter: blur(14px);
+        box-shadow:0 15px 35px rgba(0,0,0,0.35);
+        text-align:center;
+        max-width:520px;
+        margin:auto;
+        margin-top:30px;
+        border:1px solid rgba(255,255,255,0.08);
+    }
 
-    with col1:
-        if st.button("Admin"):
+    .title-login{
+        font-size:42px;
+        font-weight:800;
+        color:white;
+        margin-bottom:5px;
+    }
+
+    .sub-login{
+        color:#d9d9d9;
+        font-size:17px;
+        margin-bottom:30px;
+    }
+
+    .icon-login{
+        font-size:65px;
+        margin-bottom:15px;
+    }
+
+    </style>
+    """, unsafe_allow_html=True)
+
+    st.markdown("""
+    <div class="login-box">
+        <div class="icon-login">💰</div>
+        <div class="title-login">KAS KITA</div>
+        <div class="sub-login">
+            Aplikasi Keuangan Kas Modern <br>
+            Smart School Finance System
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # Tombol tengah premium
+    col1,col2,col3 = st.columns([1.4,2.2,1.4])
+
+    with col2:
+
+        if st.button("👨‍💼 Login Admin", use_container_width=True):
             st.session_state.role = "admin"
             st.session_state.page = "login"
 
-    with col2:
-        if st.button("User"):
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        if st.button("👨‍🎓 Masuk Sebagai User", use_container_width=True):
             st.session_state.role = "user"
             st.session_state.login = True
             st.rerun()
 
-    with col3:
-        if st.button("Developer"):
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        if st.button("👨‍💻 Developer Mode", use_container_width=True):
             st.session_state.role = "dev"
             st.session_state.page = "login"
-
 # ======================
 # LOGIN / REGISTER / FORGOT
 # ======================
