@@ -189,7 +189,10 @@ with col2:
 # ROLE
 # ======================
 if not st.session_state.login and st.session_state.page == "role":
+import base64
 
+with open("icon.png", "rb") as img_file:
+    img_base64 = base64.b64encode(img_file.read()).decode()
     st.markdown("""
     <style>
 
@@ -230,7 +233,9 @@ if not st.session_state.login and st.session_state.page == "role":
 
     st.markdown("""
     <div class="login-box">
-        <div class="icon-login">💰</div>
+        <div class="icon-login">
+            <img src="data:image/png;base64,{img_base64}" width="85">
+        </div>
         <div class="title-login">KAS KITA</div>
         <div class="sub-login">
             Aplikasi Keuangan Kas Modern <br>
