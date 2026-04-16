@@ -238,20 +238,27 @@ if not st.session_state.login and st.session_state.page == "role":
     # ======================
     # BOX LOGIN
     # ======================
-    st.markdown("""
+# ======================
+# BOX LOGIN FINAL FIX
+# ======================
+
+st.markdown(
+    """
     <div class="login-box">
 
-        <div class="title-login">KAS KITA</div>
+        <h1 class="title-login">KAS KITA</h1>
 
-        <div class="sub-login">
+        <p class="sub-login">
             Aplikasi Keuangan Kas Modern <br>
             Smart School Finance System
-        </div>
+        </p>
 
     </div>
-    """, unsafe_allow_html=True)
+    """,
+    unsafe_allow_html=True
+)
 
-    st.markdown("<br>", unsafe_allow_html=True)
+st.markdown("<br>", unsafe_allow_html=True)
 
     # ======================
     # BUTTON LOGIN TENGAH
