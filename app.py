@@ -252,20 +252,20 @@ if not st.session_state.login and st.session_state.page == "role":
 
     with col2:
 
-        if st.button("👨‍💼 Login Admin", use_container_width=True):
+        if st.button("Login Bendahara", use_container_width=True):
             st.session_state.role = "admin"
             st.session_state.page = "login"
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        if st.button("👨‍🎓 Masuk Sebagai User", use_container_width=True):
+        if st.button("Masuk Sebagai Pelihat", use_container_width=True):
             st.session_state.role = "user"
             st.session_state.login = True
             st.rerun()
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        if st.button("👨‍💻 Developer Mode", use_container_width=True):
+        if st.button("Mode Developer", use_container_width=True):
             st.session_state.role = "dev"
             st.session_state.page = "login"
 # ======================
