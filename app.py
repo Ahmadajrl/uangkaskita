@@ -273,20 +273,19 @@ if not st.session_state.login and st.session_state.page == "role":
 # ======================
 elif not st.session_state.login:
 
-    if st.button("⬅️ Kembali"):
-        st.session_state.page = "role"
-        st.session_state.role = None
-        st.rerun()
-
     st.title("Authentication")
 
-    # ================= ADMIN =================
-    if st.session_state.role == "admin":
+    tab1, tab2, tab3 = st.tabs(["Login", "Register", "Lupa Password"])
 
-        tab1, tab2, tab3 = st.tabs(["Login", "Register", "Lupa Password"])
+    # ================= LOGIN =================
+    with tab1:
 
-        # LOGIN ADMIN
-        with tab1:
+        if st.session_state.role == "admin":
+                # Tombol kembali biasa
+        if st.button("⬅️ Kembali"):
+            st.session_state.page = "role"
+            st.session_state.role = None
+            st.rerun()
             user = st.text_input("Username", key="login_user")
             pw = st.text_input("Password", type="password", key="login_pass")
             kelas = st.selectbox("Kelas", ["10","11","12"])
@@ -303,71 +302,24 @@ elif not st.session_state.login:
 
                 if data:
                     st.session_state.login = True
-                    st.session_state.role = "admin"
                     st.session_state.kelas = kelas
                     st.session_state.jurusan = jurusan.upper()
                     st.rerun()
                 else:
                     st.error("Username atau password salah")
 
-        # REGISTER ADMIN
-        with tab2:
-            new_user = st.text_input("Username Baru", key="reg_user")
-            new_pass = st.text_input("Password Baru", type="password", key="reg_pass")
-            email = st.text_input("Email", key="reg_email")
-            kelas_reg = st.selectbox("Kelas Register", ["10","11","12"], key="reg_kelas")
-            jurusan_reg = st.text_input("Jurusan Register", key="reg_jurusan")
+        elif st.session_state.role == "dev":
 
-            if st.button("Daftar"):
-                hashed = hash_password(new_pass)
+            user = st.text_input("Username Developer")
+            pw = st.text_input("Password Developer", type="password")
 
-                cursor.execute(
-                    "INSERT INTO admin VALUES (NULL,?,?,?,?,?)",
-                    (new_user, hashed, email, kelas_reg, jurusan_reg.upper())
-                )
-                conn.commit()
-                st.success("Akun berhasil dibuat")
-
-        # LUPA PASSWORD
-        with tab3:
-            user = st.text_input("Username", key="forgot_user")
-            email = st.text_input("Email", key="forgot_email")
-            new_pass = st.text_input("Password Baru", type="password", key="forgot_pass")
-
-            if st.button("Reset Password"):
-                hashed = hash_password(new_pass)
-
-                cursor.execute(
-                    "SELECT * FROM admin WHERE username=? AND email=?",
-                    (user, email)
-                )
-                data = cursor.fetchone()
-
-                if data:
-                    cursor.execute(
-                        "UPDATE admin SET password=? WHERE username=?",
-                        (hashed, user)
-                    )
-                    conn.commit()
-                    st.success("Password berhasil diubah")
+            if st.button("Login Developer"):
+                if user == DEV_USER and pw == DEV_PASS:
+                    st.session_state.login = True
+                    st.session_state.role = "dev"
+                    st.rerun()
                 else:
-                    st.error("Data tidak ditemukan")
-
-    # ================= DEVELOPER =================
-    elif st.session_state.role == "dev":
-
-        st.subheader("Login Developer")
-
-        user = st.text_input("Username Developer")
-        pw = st.text_input("Password Developer", type="password")
-
-        if st.button("Login Developer"):
-            if user == DEV_USER and pw == DEV_PASS:
-                st.session_state.login = True
-                st.session_state.role = "dev"
-                st.rerun()
-            else:
-                st.error("Login gagal")
+                    st.error("Login gagal")
 
     # ================= REGISTER =================
     with tab2:
