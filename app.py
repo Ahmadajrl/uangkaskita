@@ -295,7 +295,7 @@ elif not st.session_state.login:
             st.subheader("Reset Password")
 
     # ================= DEVELOPER =================
-    elif st.session_state.role == "dev":
+elif st.session_state.role == "dev":
 
         st.subheader("Login Developer")
 
