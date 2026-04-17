@@ -268,9 +268,6 @@ if not st.session_state.login and st.session_state.page == "role":
         if st.button("Mode Developer", use_container_width=True):
             st.session_state.role = "dev"
             st.session_state.page = "login"
-# ======================
-# LOGIN / REGISTER / FORGOT
-# ======================
 elif not st.session_state.login:
 
     if st.button("⬅️ Kembali"):
@@ -280,48 +277,24 @@ elif not st.session_state.login:
 
     st.title("Authentication")
 
-    # ==================================
-    # LOGIN ADMIN
-    # ==================================
+    # ================= ADMIN =================
     if st.session_state.role == "admin":
 
         tab1, tab2, tab3 = st.tabs(["Login", "Register", "Lupa Password"])
 
-        # LOGIN ADMIN
+        # LOGIN
         with tab1:
-            user = st.text_input("Username", key="login_user")
-            pw = st.text_input("Password", type="password", key="login_pass")
-            kelas = st.selectbox("Kelas", ["10","11","12"])
-            jurusan = st.text_input("Jurusan")
+            st.subheader("Login Admin")
 
-            if st.button("Login Admin"):
-                hashed = hash_password(pw)
-
-                cursor.execute(
-                    "SELECT * FROM admin WHERE username=? AND password=?",
-                    (user, hashed)
-                )
-                data = cursor.fetchone()
-
-                if data:
-                    st.session_state.login = True
-                    st.session_state.kelas = kelas
-                    st.session_state.jurusan = jurusan.upper()
-                    st.rerun()
-                else:
-                    st.error("Username atau password salah")
-
-        # REGISTER ADMIN
+        # REGISTER
         with tab2:
             st.subheader("Register Admin")
 
-        # LUPA PASSWORD
+        # FORGOT PASSWORD
         with tab3:
             st.subheader("Reset Password")
 
-    # ==================================
-    # LOGIN DEVELOPER
-    # ==================================
+    # ================= DEVELOPER =================
     elif st.session_state.role == "dev":
 
         st.subheader("Login Developer")
