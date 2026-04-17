@@ -272,20 +272,23 @@ if not st.session_state.login and st.session_state.page == "role":
 # LOGIN / REGISTER / FORGOT
 # ======================
 elif not st.session_state.login:
-    # Tombol kembali biasa
+
     if st.button("⬅️ Kembali"):
         st.session_state.page = "role"
         st.session_state.role = None
         st.rerun()
+
     st.title("Authentication")
 
-    tab1, tab2, tab3 = st.tabs(["Login", "Register", "Lupa Password"])
+    # ==================================
+    # LOGIN ADMIN
+    # ==================================
+    if st.session_state.role == "admin":
 
-    # ================= LOGIN =================
-    with tab1:
+        tab1, tab2, tab3 = st.tabs(["Login", "Register", "Lupa Password"])
 
-        if st.session_state.role == "admin":
-
+        # LOGIN ADMIN
+        with tab1:
             user = st.text_input("Username", key="login_user")
             pw = st.text_input("Password", type="password", key="login_pass")
             kelas = st.selectbox("Kelas", ["10","11","12"])
@@ -308,18 +311,31 @@ elif not st.session_state.login:
                 else:
                     st.error("Username atau password salah")
 
-        elif st.session_state.role == "dev":
+        # REGISTER ADMIN
+        with tab2:
+            st.subheader("Register Admin")
 
-            user = st.text_input("Username Developer")
-            pw = st.text_input("Password Developer", type="password")
+        # LUPA PASSWORD
+        with tab3:
+            st.subheader("Reset Password")
 
-            if st.button("Login Developer"):
-                if user == DEV_USER and pw == DEV_PASS:
-                    st.session_state.login = True
-                    st.session_state.role = "dev"
-                    st.rerun()
-                else:
-                    st.error("Login gagal")
+    # ==================================
+    # LOGIN DEVELOPER
+    # ==================================
+    elif st.session_state.role == "dev":
+
+        st.subheader("Login Developer")
+
+        user = st.text_input("Username Developer")
+        pw = st.text_input("Password Developer", type="password")
+
+        if st.button("Login Developer"):
+            if user == DEV_USER and pw == DEV_PASS:
+                st.session_state.login = True
+                st.session_state.role = "dev"
+                st.rerun()
+            else:
+                st.error("Login gagal")
 
     # ================= REGISTER =================
     with tab2:
