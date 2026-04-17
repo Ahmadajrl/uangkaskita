@@ -272,7 +272,11 @@ if not st.session_state.login and st.session_state.page == "role":
 # LOGIN / REGISTER / FORGOT
 # ======================
 elif not st.session_state.login:
-
+    if st.button("Kembali"):
+        st.session_state.page = "role"
+        st.session_state.role = None
+        st.rerun()
+        
     st.title("Authentication")
 
     tab1, tab2, tab3 = st.tabs(["Login", "Register", "Lupa Password"])
@@ -281,11 +285,6 @@ elif not st.session_state.login:
     with tab1:
 
         if st.session_state.role == "admin":
-                # Tombol kembali biasa
-        if st.button("⬅️ Kembali"):
-            st.session_state.page = "role"
-            st.session_state.role = None
-            st.rerun()
             user = st.text_input("Username", key="login_user")
             pw = st.text_input("Password", type="password", key="login_pass")
             kelas = st.selectbox("Kelas", ["10","11","12"])
@@ -308,18 +307,18 @@ elif not st.session_state.login:
                 else:
                     st.error("Username atau password salah")
 
-        elif st.session_state.role == "dev":
+    elif st.session_state.role == "dev":
 
-            user = st.text_input("Username Developer")
-            pw = st.text_input("Password Developer", type="password")
+        user = st.text_input("Username Developer")
+        pw = st.text_input("Password Developer", type="password")
 
-            if st.button("Login Developer"):
-                if user == DEV_USER and pw == DEV_PASS:
-                    st.session_state.login = True
-                    st.session_state.role = "dev"
-                    st.rerun()
-                else:
-                    st.error("Login gagal")
+        if st.button("Login Developer"):
+            if user == DEV_USER and pw == DEV_PASS:
+                st.session_state.login = True
+                st.session_state.role = "dev"
+                st.rerun()
+            else:
+                st.error("Login gagal")
 
     # ================= REGISTER =================
     with tab2:
