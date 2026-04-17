@@ -268,6 +268,9 @@ if not st.session_state.login and st.session_state.page == "role":
         if st.button("Mode Developer", use_container_width=True):
             st.session_state.role = "dev"
             st.session_state.page = "login"
+# ======================
+# LOGIN / REGISTER / FORGOT
+# ======================
 elif not st.session_state.login:
 
     if st.button("⬅️ Kembali"):
@@ -282,20 +285,76 @@ elif not st.session_state.login:
 
         tab1, tab2, tab3 = st.tabs(["Login", "Register", "Lupa Password"])
 
-        # LOGIN
+        # LOGIN ADMIN
         with tab1:
-            st.subheader("Login Admin")
+            user = st.text_input("Username", key="login_user")
+            pw = st.text_input("Password", type="password", key="login_pass")
+            kelas = st.selectbox("Kelas", ["10","11","12"])
+            jurusan = st.text_input("Jurusan")
 
-        # REGISTER
+            if st.button("Login Admin"):
+                hashed = hash_password(pw)
+
+                cursor.execute(
+                    "SELECT * FROM admin WHERE username=? AND password=?",
+                    (user, hashed)
+                )
+                data = cursor.fetchone()
+
+                if data:
+                    st.session_state.login = True
+                    st.session_state.role = "admin"
+                    st.session_state.kelas = kelas
+                    st.session_state.jurusan = jurusan.upper()
+                    st.rerun()
+                else:
+                    st.error("Username atau password salah")
+
+        # REGISTER ADMIN
         with tab2:
-            st.subheader("Register Admin")
+            new_user = st.text_input("Username Baru", key="reg_user")
+            new_pass = st.text_input("Password Baru", type="password", key="reg_pass")
+            email = st.text_input("Email", key="reg_email")
+            kelas_reg = st.selectbox("Kelas Register", ["10","11","12"], key="reg_kelas")
+            jurusan_reg = st.text_input("Jurusan Register", key="reg_jurusan")
 
-        # FORGOT PASSWORD
+            if st.button("Daftar"):
+                hashed = hash_password(new_pass)
+
+                cursor.execute(
+                    "INSERT INTO admin VALUES (NULL,?,?,?,?,?)",
+                    (new_user, hashed, email, kelas_reg, jurusan_reg.upper())
+                )
+                conn.commit()
+                st.success("Akun berhasil dibuat")
+
+        # LUPA PASSWORD
         with tab3:
-            st.subheader("Reset Password")
+            user = st.text_input("Username", key="forgot_user")
+            email = st.text_input("Email", key="forgot_email")
+            new_pass = st.text_input("Password Baru", type="password", key="forgot_pass")
+
+            if st.button("Reset Password"):
+                hashed = hash_password(new_pass)
+
+                cursor.execute(
+                    "SELECT * FROM admin WHERE username=? AND email=?",
+                    (user, email)
+                )
+                data = cursor.fetchone()
+
+                if data:
+                    cursor.execute(
+                        "UPDATE admin SET password=? WHERE username=?",
+                        (hashed, user)
+                    )
+                    conn.commit()
+                    st.success("Password berhasil diubah")
+                else:
+                    st.error("Data tidak ditemukan")
 
     # ================= DEVELOPER =================
-elif st.session_state.role == "dev":
+    elif st.session_state.role == "dev":
 
         st.subheader("Login Developer")
 
