@@ -277,10 +277,6 @@ elif not st.session_state.login:
         st.session_state.page = "role"
         st.session_state.role = None
         st.rerun()
-
-    st.title("Authentication")
-
-    tab1, tab2, tab3 = st.tabs(["Login", "Register", "Lupa Password"])
     st.title("Authentication")
 
     tab1, tab2, tab3 = st.tabs(["Login", "Register", "Lupa Password"])
