@@ -272,55 +272,8 @@ if not st.session_state.login and st.session_state.page == "role":
 # LOGIN / REGISTER / FORGOT
 # ======================
 elif not st.session_state.login:
-    st.markdown("""
-    <style>
 
-    /* BACK BUTTON PREMIUM */
-    .back-btn button{
-        background: rgba(255,255,255,0.08);
-        border:1px solid rgba(255,255,255,0.15);
-        color:white;
-        width:52px;
-        height:52px;
-        border-radius:16px;
-        font-size:24px;
-        font-weight:bold;
-        backdrop-filter: blur(12px);
-        box-shadow:0 8px 25px rgba(0,0,0,0.25);
-        transition:0.25s;
-    }
-
-    .back-btn button:hover{
-        transform:scale(1.08);
-        background:#09F289;
-        color:#01023B;
-    }
-
-    </style>
-    """, unsafe_allow_html=True)
-
-# ==========================
-# POSISI KIRI ATAS
-# ==========================
-col1, col2 = st.columns([1,8])
-
-with col1:
-    st.markdown('<div class="back-btn">', unsafe_allow_html=True)
-
-    if st.button("←", key="back_premium"):
-        st.session_state.page = "role"
-        st.session_state.role = None
-        st.rerun()
-
-    st.markdown('</div>', unsafe_allow_html=True)
-
-with col2:
-    st.markdown("<h2 style='color:white;'>Authentication</h2>", unsafe_allow_html=True)
-
-# ==========================
-# TAB LOGIN
-# ==========================
-tab1, tab2, tab3 = st.tabs(["Login", "Register", "Lupa Password"])
+    st.title("Authentication")
 
     tab1, tab2, tab3 = st.tabs(["Login", "Register", "Lupa Password"])
 
