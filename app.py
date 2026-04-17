@@ -272,7 +272,15 @@ if not st.session_state.login and st.session_state.page == "role":
 # LOGIN / REGISTER / FORGOT
 # ======================
 elif not st.session_state.login:
+    # Tombol kembali biasa
+    if st.button("⬅️ Kembali"):
+        st.session_state.page = "role"
+        st.session_state.role = None
+        st.rerun()
 
+    st.title("Authentication")
+
+    tab1, tab2, tab3 = st.tabs(["Login", "Register", "Lupa Password"])
     st.title("Authentication")
 
     tab1, tab2, tab3 = st.tabs(["Login", "Register", "Lupa Password"])
