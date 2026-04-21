@@ -11,6 +11,14 @@ st.set_page_config(page_title="KAS KITA", layout="wide")
 
 API_URL = "https://script.google.com/macros/s/AKfycbyYoDZMhhhDBf3U3hlGWKepj8f4QkYekuRtx7UK4ctPzNbnlGU3QHPQjtT6C7eaZBix/exec"
 
+# ================= STYLE =================
+st.markdown("""
+<style>
+.stApp {background: linear-gradient(135deg,#0f172a,#1e293b); color:white;}
+.card {background: rgba(255,255,255,0.05); padding:20px; border-radius:15px;}
+</style>
+""", unsafe_allow_html=True)
+
 # ================= HELPER =================
 def hash_password(p):
     return hashlib.sha256(p.encode()).hexdigest()
@@ -49,8 +57,10 @@ def generate_pdf(df):
     doc = SimpleDocTemplate(buffer)
 
     df = df.copy()
+
     if "nominal" in df.columns:
         df["nominal"] = pd.to_numeric(df["nominal"], errors="coerce").fillna(0)
+        df["nominal"] = df["nominal"].astype(int)
 
     data = [df.columns.tolist()] + df.values.tolist()
 
@@ -115,48 +125,76 @@ if not st.session_state.login:
 # ================= MAIN =================
 else:
 
-    # ===== SIDEBAR =====
     with st.sidebar:
-        st.markdown(f"### 👤 {st.session_state.user}")
+        st.write(f"👤 {st.session_state.user}")
 
-        menu = st.radio(
-            "Menu",
-            ["Dashboard", "Pengeluaran"]
-        )
-
+        if st.button("Dashboard"):
+            st.session_state.menu = "dashboard"
+        if st.button("Pengeluaran"):
+            st.session_state.menu = "pengeluaran"
         if st.button("Logout"):
             st.session_state.clear()
             st.rerun()
 
     # ================= DASHBOARD =================
-    if menu == "Dashboard":
+    if st.session_state.menu == "dashboard":
 
         st.title("📊 Dashboard Kas")
 
         df = api_get("kas")
 
         if not df.empty:
+
             df["tanggal"] = pd.to_datetime(df["tanggal"], errors="coerce")
             df["nominal"] = pd.to_numeric(df["nominal"], errors="coerce").fillna(0)
             df["bulan"] = df["tanggal"].dt.strftime("%B %Y")
 
+            # FILTER BULAN
             bulan_list = ["Semua"] + sorted(df["bulan"].dropna().unique())
             bulan = st.selectbox("Filter Bulan", bulan_list)
 
             df_filtered = df if bulan == "Semua" else df[df["bulan"] == bulan]
 
+            # TOTAL
             total = df_filtered["nominal"].sum()
             st.metric("Total Kas", rupiah(total))
 
+            # GRAFIK BULAN
             st.subheader("Grafik Kas per Bulan")
             grafik = df.groupby("bulan")["nominal"].sum()
             st.bar_chart(grafik)
 
+            # TABEL
             st.dataframe(df_filtered)
 
+            # PDF
             st.download_button("Download PDF", generate_pdf(df_filtered), "kas.pdf")
 
+            # ================= STATISTIK SISWA =================
+            st.subheader("Statistik Siswa")
+
+            siswa = st.selectbox("Pilih Siswa", df_filtered["nama"].unique())
+
+            if st.button("Cek Statistik"):
+                data = df_filtered[df_filtered["nama"] == siswa]
+                hasil = data["status"].value_counts()
+
+                st.bar_chart(hasil)
+
+                total = len(data)
+                telat = len(data[data["status"] == "Telat"])
+                persen = (telat / total) * 100 if total else 0
+
+                if persen < 20:
+                    st.success("Baik")
+                elif persen < 50:
+                    st.warning("Perlu peningkatan")
+                else:
+                    st.error("Sering telat")
+
+        # ================= INPUT =================
         st.subheader("Tambah Data")
+
         nama = st.text_input("Nama")
         tanggal = st.date_input("Tanggal")
         status = st.selectbox("Status", ["Tepat Waktu", "Telat"])
@@ -170,13 +208,23 @@ else:
                 "nominal": int(nominal),
                 "owner": st.session_state.user
             })
-            st.success("Data tersimpan")
+            st.success("Data masuk")
+            st.rerun()
+
+        # ================= HAPUS =================
+        st.subheader("Hapus Data")
+
+        id_hapus = st.number_input("ID", step=1)
+
+        if st.button("Hapus"):
+            api_delete("kas", int(id_hapus))
+            st.success("Data dihapus")
             st.rerun()
 
     # ================= PENGELUARAN =================
-    elif menu == "Pengeluaran":
+    elif st.session_state.menu == "pengeluaran":
 
-        st.title("💸 Menu Pengeluaran")
+        st.title("💸 Pengeluaran")
 
         df_keluar = api_get("pengeluaran")
         df_masuk = api_get("kas")
@@ -192,22 +240,13 @@ else:
         saldo = total_masuk - total_keluar
 
         col1, col2, col3 = st.columns(3)
-        col1.metric("Total Kas", rupiah(total_masuk))
+        col1.metric("Kas", rupiah(total_masuk))
         col2.metric("Pengeluaran", rupiah(total_keluar))
         col3.metric("Saldo", rupiah(saldo))
 
-        st.subheader("Riwayat Pengeluaran")
-
         if not df_keluar.empty:
             st.dataframe(df_keluar)
-
-            st.download_button(
-                "Download PDF",
-                generate_pdf(df_keluar),
-                "pengeluaran.pdf"
-            )
-        else:
-            st.info("Belum ada data pengeluaran")
+            st.download_button("Download PDF", generate_pdf(df_keluar), "pengeluaran.pdf")
 
         st.subheader("Tambah Pengeluaran")
 
@@ -222,5 +261,5 @@ else:
                 "nominal": int(nom),
                 "owner": st.session_state.user
             })
-            st.success("Pengeluaran tersimpan")
+            st.success("Pengeluaran ditambah")
             st.rerun()
