@@ -78,7 +78,6 @@ if not st.session_state.login:
 
     tab1, tab2 = st.tabs(["Login", "Register"])
 
-    # LOGIN
     with tab1:
         user = st.text_input("Username")
         pw = st.text_input("Password", type="password")
@@ -101,7 +100,6 @@ if not st.session_state.login:
                 else:
                     st.error("Username / Password salah")
 
-    # REGISTER
     with tab2:
         user = st.text_input("Username Baru")
         pw = st.text_input("Password Baru", type="password")
@@ -145,44 +143,17 @@ else:
             df["tanggal"] = pd.to_datetime(df["tanggal"], errors="coerce")
             df["nominal"] = pd.to_numeric(df["nominal"], errors="coerce").fillna(0)
 
-            # FIX TIPE DATA (PENTING)
-            df["kelas"] = df["kelas"].astype(str)
-            df["jurusan"] = df["jurusan"].astype(str)
-
-            # BULAN
+            # BUAT BULAN
             df["bulan"] = df["tanggal"].dt.strftime("%B %Y")
 
-            # ================= FILTER =================
-            st.subheader("🔍 Filter Data")
+            # ================= FILTER BULAN =================
+            st.subheader("📅 Filter Bulan")
 
-            col1, col2, col3 = st.columns(3)
+            bulan_list = ["Semua"] + sorted(df["bulan"].dropna().astype(str).unique().tolist())
 
-            with col1:
-                f_kelas = st.selectbox(
-                    "Kelas",
-                    ["Semua"] + sorted(df["kelas"].dropna().astype(str).unique().tolist())
-                )
+            f_bulan = st.selectbox("Pilih Bulan", bulan_list)
 
-            with col2:
-                f_jurusan = st.selectbox(
-                    "Jurusan",
-                    ["Semua"] + sorted(df["jurusan"].dropna().astype(str).unique().tolist())
-                )
-
-            with col3:
-                f_bulan = st.selectbox(
-                    "Bulan",
-                    ["Semua"] + sorted(df["bulan"].dropna().astype(str).unique().tolist())
-                )
-
-            # FILTER LOGIC
             df_filtered = df.copy()
-
-            if f_kelas != "Semua":
-                df_filtered = df_filtered[df_filtered["kelas"] == f_kelas]
-
-            if f_jurusan != "Semua":
-                df_filtered = df_filtered[df_filtered["jurusan"] == f_jurusan]
 
             if f_bulan != "Semua":
                 df_filtered = df_filtered[df_filtered["bulan"] == f_bulan]
