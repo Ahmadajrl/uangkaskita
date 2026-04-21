@@ -34,6 +34,9 @@ def api_delete(table, id):
         "id":id
     })
 
+def rupiah(x):
+    return f"Rp {int(x):,}".replace(",", ".")
+
 # ================= SESSION =================
 if "login" not in st.session_state:
     st.session_state.login = False
@@ -109,11 +112,12 @@ else:
 
         if not df.empty:
 
+            # FIX TIPE DATA
             df["nominal"] = pd.to_numeric(df["nominal"], errors="coerce").fillna(0)
 
             # TOTAL KAS
             total_kas = df["nominal"].sum()
-            st.metric("💰 Total Kas", f"Rp {int(total_kas):,}".replace(",", "."))
+            st.metric("💰 Total Kas", rupiah(total_kas))
 
             # DATA
             st.subheader("📋 Data Kas")
@@ -210,16 +214,24 @@ else:
         df_keluar = api_get("pengeluaran")
         df_masuk = api_get("kas")
 
+        # FIX TIPE DATA (INI YANG NGATASI ERROR KAMU)
+        if not df_keluar.empty:
+            df_keluar["nominal"] = pd.to_numeric(df_keluar["nominal"], errors="coerce").fillna(0)
+
+        if not df_masuk.empty:
+            df_masuk["nominal"] = pd.to_numeric(df_masuk["nominal"], errors="coerce").fillna(0)
+
         total_masuk = df_masuk["nominal"].sum() if not df_masuk.empty else 0
         total_keluar = df_keluar["nominal"].sum() if not df_keluar.empty else 0
         saldo = total_masuk - total_keluar
 
         col1, col2, col3 = st.columns(3)
-        col1.metric("Total Kas", f"Rp {int(total_masuk):,}".replace(",", "."))
-        col2.metric("Pengeluaran", f"Rp {int(total_keluar):,}".replace(",", "."))
-        col3.metric("Saldo", f"Rp {int(saldo):,}".replace(",", "."))
+        col1.metric("Total Kas", rupiah(total_masuk))
+        col2.metric("Pengeluaran", rupiah(total_keluar))
+        col3.metric("Saldo", rupiah(saldo))
 
         if not df_keluar.empty:
+            st.subheader("📋 Riwayat Pengeluaran")
             st.dataframe(df_keluar)
 
     # ================= LOGOUT =================
