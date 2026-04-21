@@ -19,10 +19,16 @@ def api_get(table):
     try:
         res = requests.get(API_URL, params={
             "action": "get",
-            "table": table,
-            "owner": st.session_state.user
+            "table": table
         })
-        return pd.DataFrame(res.json())
+        df = pd.DataFrame(res.json())
+
+        # FILTER OWNER (AMAN)
+        if not df.empty and "owner" in df.columns:
+            df["owner"] = df["owner"].astype(str)
+            df = df[df["owner"] == st.session_state.user]
+
+        return df
     except:
         st.error("API ERROR")
         return pd.DataFrame()
@@ -53,7 +59,7 @@ def generate_pdf(df):
 
     if "nominal" in df_copy.columns:
         df_copy["nominal"] = pd.to_numeric(df_copy["nominal"], errors="coerce").fillna(0)
-        df_copy["nominal"] = df_copy["nominal"].astype(int).apply(lambda x: f"Rp {x:,}".replace(",", "."))
+        df_copy["nominal"] = df_copy["nominal"].astype(int)
 
     data = [df_copy.columns.tolist()] + df_copy.values.tolist()
 
@@ -71,8 +77,10 @@ def generate_pdf(df):
 # ================= SESSION =================
 if "login" not in st.session_state:
     st.session_state.login = False
+
 if "menu" not in st.session_state:
     st.session_state.menu = "dashboard"
+
 if "user" not in st.session_state:
     st.session_state.user = ""
 
@@ -95,6 +103,9 @@ if not st.session_state.login:
             }).json())
 
             if not df.empty:
+                df["username"] = df["username"].astype(str)
+                df["password"] = df["password"].astype(str)
+
                 data = df[
                     (df["username"] == user) &
                     (df["password"] == hash_password(pw))
@@ -113,11 +124,10 @@ if not st.session_state.login:
         pw = st.text_input("Password Baru", type="password")
 
         if st.button("Daftar"):
-            data = {
+            api_post("admin", {
                 "username": user,
                 "password": hash_password(pw)
-            }
-            api_post("admin", data)
+            })
             st.success("Akun berhasil dibuat")
 
 # ================= MAIN =================
@@ -144,37 +154,63 @@ else:
         df = api_get("kas")
 
         if not df.empty:
+
+            # FIX DATA
+            if "tanggal" in df.columns:
+                df["tanggal"] = pd.to_datetime(df["tanggal"], errors="coerce")
+                df["bulan"] = df["tanggal"].dt.strftime("%B %Y")
+
             df["nominal"] = pd.to_numeric(df["nominal"], errors="coerce").fillna(0)
 
+            # ================= FILTER BULAN =================
+            bulan_list = ["Semua"]
+            if "bulan" in df.columns:
+                bulan_list += sorted(df["bulan"].dropna().unique().tolist())
+
+            bulan = st.selectbox("📅 Filter Bulan", bulan_list)
+
+            if bulan != "Semua":
+                df = df[df["bulan"] == bulan]
+
+            # ================= TOTAL =================
             total_kas = df["nominal"].sum()
             st.metric("💰 Total Kas", rupiah(total_kas))
 
+            # ================= GRAFIK =================
+            if "bulan" in df.columns:
+                grafik = df.groupby("bulan")["nominal"].sum()
+                st.bar_chart(grafik)
+
+            # ================= TABEL =================
             st.subheader("📋 Data Kas")
             st.dataframe(df)
 
+            # ================= PDF =================
             st.download_button(
-                "⬇️ Download Data Kas (PDF)",
+                "⬇️ Download PDF",
                 generate_pdf(df),
-                file_name="data_kas.pdf"
+                "kas.pdf"
             )
 
-            # STATISTIK
-            st.subheader("📊 Statistik Per Siswa")
-
+            # ================= STATISTIK SISWA =================
             if "nama" in df.columns:
-                siswa = st.selectbox("Pilih Siswa", sorted(df["nama"].dropna().unique()))
+                st.subheader("📊 Statistik Siswa")
 
-                if st.button("Cek Statistik"):
-                    data = df[df["nama"] == siswa]
+                siswa_list = df["nama"].dropna().unique().tolist()
+                if siswa_list:
+                    siswa = st.selectbox("Pilih Siswa", siswa_list)
 
-                    if "status" in df.columns:
-                        hasil = data["status"].value_counts()
-                        st.bar_chart(hasil)
+                    if st.button("Cek Statistik"):
+                        data = df[df["nama"] == siswa]
+
+                        if "status" in df.columns:
+                            hasil = data["status"].value_counts()
+                            st.bar_chart(hasil)
 
         else:
             st.warning("Belum ada data kas")
 
-        # TAMBAH DATA
+        # ================= TAMBAH DATA =================
         st.subheader("➕ Tambah Data Kas")
 
         nama = st.text_input("Nama")
@@ -186,7 +222,7 @@ else:
         nominal = st.number_input("Nominal", min_value=0)
 
         if st.button("Simpan Data"):
-            data = {
+            api_post("kas", {
                 "nama": nama,
                 "tanggal": str(tanggal),
                 "status": status,
@@ -195,12 +231,11 @@ else:
                 "keterangan": keterangan,
                 "nominal": int(nominal),
                 "owner": st.session_state.user
-            }
-            api_post("kas", data)
+            })
             st.success("Data berhasil disimpan")
             st.rerun()
 
-        # HAPUS DATA
+        # ================= HAPUS =================
         st.subheader("🗑️ Hapus Data")
 
         id_hapus = st.number_input("Masukkan ID", step=1)
@@ -213,22 +248,7 @@ else:
     # ================= PENGELUARAN =================
     elif st.session_state.menu == "pengeluaran":
 
-        st.subheader("💸 Input Pengeluaran")
-
-        tgl = st.date_input("Tanggal")
-        ket = st.text_input("Keterangan")
-        nom = st.number_input("Nominal", min_value=0)
-
-        if st.button("Simpan Pengeluaran"):
-            data = {
-                "tanggal": str(tgl),
-                "keterangan": ket,
-                "nominal": int(nom),
-                "owner": st.session_state.user
-            }
-            api_post("pengeluaran", data)
-            st.success("Pengeluaran tersimpan")
-            st.rerun()
+        st.title("💸 Pengeluaran")
 
         df_keluar = api_get("pengeluaran")
         df_masuk = api_get("kas")
@@ -253,12 +273,29 @@ else:
             st.dataframe(df_keluar)
 
             st.download_button(
-                "⬇️ Download Pengeluaran (PDF)",
+                "⬇️ Download PDF",
                 generate_pdf(df_keluar),
-                file_name="data_pengeluaran.pdf"
+                "pengeluaran.pdf"
             )
 
-    # LOGOUT
+        # INPUT
+        st.subheader("Tambah Pengeluaran")
+
+        tgl = st.date_input("Tanggal")
+        ket = st.text_input("Keterangan")
+        nom = st.number_input("Nominal", min_value=0)
+
+        if st.button("Simpan Pengeluaran"):
+            api_post("pengeluaran", {
+                "tanggal": str(tgl),
+                "keterangan": ket,
+                "nominal": int(nom),
+                "owner": st.session_state.user
+            })
+            st.success("Pengeluaran tersimpan")
+            st.rerun()
+
+    # ================= LOGOUT =================
     if st.button("Logout"):
         st.session_state.clear()
         st.rerun()
