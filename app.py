@@ -14,34 +14,32 @@ def hash_password(p):
 
 def api_get(table):
     try:
-        res = requests.get(API_URL, params={
-            "action": "get",
-            "table": table
-        })
-        data = res.json()
-        return pd.DataFrame(data)
-    except Exception as e:
-        st.error(f"API GET ERROR: {e}")
+        res = requests.get(API_URL, params={"action":"get","table":table})
+        return pd.DataFrame(res.json())
+    except:
+        st.error("API ERROR")
         return pd.DataFrame()
 
 def api_post(table, data):
-    try:
-        res = requests.post(API_URL, json={
-            "action": "insert",
-            "table": table,
-            "data": data
-        })
+    requests.post(API_URL, json={
+        "action":"insert",
+        "table":table,
+        "data":data
+    })
 
-        # DEBUG WAJIB
-        st.write("STATUS:", res.status_code)
-        st.write("RESPONSE:", res.text)
-
-    except Exception as e:
-        st.error(f"POST ERROR: {e}")
+def api_delete(table, id):
+    requests.post(API_URL, json={
+        "action":"delete",
+        "table":table,
+        "id":id
+    })
 
 # ================= SESSION =================
 if "login" not in st.session_state:
     st.session_state.login = False
+
+if "menu" not in st.session_state:
+    st.session_state.menu = "dashboard"
 
 # ================= AUTH =================
 if not st.session_state.login:
@@ -50,45 +48,32 @@ if not st.session_state.login:
 
     tab1, tab2 = st.tabs(["Login", "Register"])
 
-    # ================= LOGIN =================
+    # LOGIN
     with tab1:
-        st.subheader("Login")
-
-        user = st.text_input("Username", key="login_user")
-        pw = st.text_input("Password", type="password", key="login_pass")
+        user = st.text_input("Username")
+        pw = st.text_input("Password", type="password")
 
         if st.button("Login"):
-
             df = api_get("admin")
 
-            st.write("DATA ADMIN:", df)  # DEBUG
-
-            if df.empty:
-                st.error("Data admin kosong / API gagal")
-            else:
+            if not df.empty:
                 data = df[
                     (df["username"] == user) &
                     (df["password"] == hash_password(pw))
                 ]
 
-                st.write("HASIL LOGIN:", data)  # DEBUG
-
                 if not data.empty:
                     st.session_state.login = True
-                    st.success("Login berhasil")
                     st.rerun()
                 else:
-                    st.error("Username / password salah")
+                    st.error("Username / Password salah")
 
-    # ================= REGISTER =================
+    # REGISTER
     with tab2:
-        st.subheader("Register")
-
-        user = st.text_input("Username Baru", key="reg_user")
-        pw = st.text_input("Password Baru", type="password", key="reg_pass")
+        user = st.text_input("Username Baru")
+        pw = st.text_input("Password Baru", type="password")
 
         if st.button("Daftar"):
-
             data = {
                 "username": user,
                 "password": hash_password(pw),
@@ -96,75 +81,148 @@ if not st.session_state.login:
                 "kelas": "-",
                 "jurusan": "-"
             }
-
             api_post("admin", data)
+            st.success("Akun berhasil dibuat")
 
-            st.success("Akun berhasil dibuat (cek spreadsheet)")
-
-# ================= MAIN APP =================
+# ================= MAIN =================
 else:
 
     st.title("📊 Dashboard KAS")
 
-    df = api_get("kas")
+    # MENU
+    col1, col2 = st.columns(2)
 
-    if not df.empty:
-        st.dataframe(df)
-    else:
-        st.warning("Belum ada data kas")
+    with col1:
+        if st.button("📊 Dashboard"):
+            st.session_state.menu = "dashboard"
+            st.rerun()
 
-st.subheader("➕ Tambah Data Kas")
+    with col2:
+        if st.button("💸 Pengeluaran"):
+            st.session_state.menu = "pengeluaran"
+            st.rerun()
 
-col1, col2 = st.columns(2)
+    # ================= DASHBOARD =================
+    if st.session_state.menu == "dashboard":
 
-with col1:
-    nama = st.text_input("Nama")
-    tanggal = st.date_input("Tanggal")
-    status = st.selectbox("Status", ["Tepat Waktu", "Telat"])
-    kelas = st.text_input("Kelas")
+        df = api_get("kas")
 
-with col2:
-    jurusan = st.text_input("Jurusan")
-    keterangan = st.text_input("Keterangan")
-    nominal = st.number_input("Nominal", min_value=0)
+        if not df.empty:
 
-if st.button("Simpan Data"):
+            df["nominal"] = pd.to_numeric(df["nominal"], errors="coerce").fillna(0)
 
-    data = {
-        "nama": nama,
-        "tanggal": str(tanggal),
-        "status": status,
-        "kelas": kelas,
-        "jurusan": jurusan,
-        "keterangan": keterangan,
-        "nominal": int(nominal)
-    }
+            # TOTAL KAS
+            total_kas = df["nominal"].sum()
+            st.metric("💰 Total Kas", f"Rp {int(total_kas):,}".replace(",", "."))
 
-    api_post("kas", data)
+            # DATA
+            st.subheader("📋 Data Kas")
+            st.dataframe(df)
 
-    st.success("Data berhasil disimpan")
-    st.rerun()
+            # ================= STATISTIK =================
+            st.subheader("📊 Statistik Per Siswa")
 
-    nama = st.text_input("Nama")
+            siswa = st.selectbox("Pilih Siswa", sorted(df["nama"].unique()))
 
-    if st.button("Tambah Data"):
-        data = {
-            "nama": nama,
-            "tanggal": "",
-            "status": "",
-            "kelas": "",
-            "jurusan": "",
-            "keterangan": "",
-            "nominal": 0
-        }
+            if st.button("Cek Statistik"):
+                data = df[df["nama"] == siswa]
+                hasil = data["status"].value_counts()
 
-        api_post("kas", data)
+                st.bar_chart(hasil)
 
-        st.success("Data berhasil ditambahkan")
-        st.rerun()
+                total = len(data)
+                telat = len(data[data["status"] == "Telat"])
+                persen = (telat / total) * 100 if total > 0 else 0
 
-    st.subheader("Logout")
+                if persen < 20:
+                    st.success("Performa sangat baik 👍")
+                elif persen < 50:
+                    st.warning("Perlu peningkatan ⚠️")
+                else:
+                    st.error("Sering telat ❌")
 
+        else:
+            st.warning("Belum ada data kas")
+
+        # ================= TAMBAH DATA =================
+        st.subheader("➕ Tambah Data Kas")
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+            nama = st.text_input("Nama")
+            tanggal = st.date_input("Tanggal")
+            status = st.selectbox("Status", ["Tepat Waktu", "Telat"])
+            kelas = st.text_input("Kelas")
+
+        with col2:
+            jurusan = st.text_input("Jurusan")
+            keterangan = st.text_input("Keterangan")
+            nominal = st.number_input("Nominal", min_value=0)
+
+        if st.button("Simpan Data"):
+            data = {
+                "nama": nama,
+                "tanggal": str(tanggal),
+                "status": status,
+                "kelas": kelas,
+                "jurusan": jurusan,
+                "keterangan": keterangan,
+                "nominal": int(nominal)
+            }
+
+            api_post("kas", data)
+            st.success("Data berhasil disimpan")
+            st.rerun()
+
+        # ================= HAPUS DATA =================
+        st.subheader("🗑️ Hapus Data")
+
+        id_hapus = st.number_input("Masukkan ID", step=1)
+
+        if st.button("Hapus"):
+            api_delete("kas", int(id_hapus))
+            st.success("Data berhasil dihapus")
+            st.rerun()
+
+    # ================= PENGELUARAN =================
+    elif st.session_state.menu == "pengeluaran":
+
+        st.subheader("💸 Input Pengeluaran")
+
+        tgl = st.date_input("Tanggal")
+        ket = st.text_input("Keterangan")
+        nom = st.number_input("Nominal", min_value=0)
+
+        if st.button("Simpan Pengeluaran"):
+            data = {
+                "tanggal": str(tgl),
+                "kelas": "-",
+                "jurusan": "-",
+                "keterangan": ket,
+                "nominal": int(nom)
+            }
+
+            api_post("pengeluaran", data)
+            st.success("Pengeluaran tersimpan")
+            st.rerun()
+
+        df_keluar = api_get("pengeluaran")
+        df_masuk = api_get("kas")
+
+        total_masuk = df_masuk["nominal"].sum() if not df_masuk.empty else 0
+        total_keluar = df_keluar["nominal"].sum() if not df_keluar.empty else 0
+        saldo = total_masuk - total_keluar
+
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Total Kas", f"Rp {int(total_masuk):,}".replace(",", "."))
+        col2.metric("Pengeluaran", f"Rp {int(total_keluar):,}".replace(",", "."))
+        col3.metric("Saldo", f"Rp {int(saldo):,}".replace(",", "."))
+
+        if not df_keluar.empty:
+            st.dataframe(df_keluar)
+
+    # ================= LOGOUT =================
     if st.button("Logout"):
         st.session_state.clear()
         st.rerun()
