@@ -15,7 +15,7 @@ st.set_page_config(
     layout="wide"
 )
 
-API_URL = "https://script.google.com/macros/s/AKfycbx-e8pKl7d42dmKU0cIwcXKAo9Y-JiMRt0UYpIgqZEWNCZ1A7rNfW1Nc0upWYJq1_n4/exec"
+API_URL = "https://script.google.com/macros/s/AKfycbwDTFrVRp4LuLnwG_OAyBH4KefKfkwilzRfOlYcArMHZvK6uqV6cUvih_VQ1kVrKgr4/exec"
 
 DEV_USER = "developer"
 DEV_PASS = "kaskita"
