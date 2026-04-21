@@ -95,8 +95,7 @@ if not st.session_state.login:
         pw = st.text_input("Password", type="password")
 
         if st.button("Login"):
-            df = requests.get(API_URL, params={"action":"get","table":"admin"}).json()
-            df = pd.DataFrame(df)
+            df = pd.DataFrame(requests.get(API_URL, params={"action":"get","table":"admin"}).json())
 
             if not df.empty:
                 data = df[
@@ -125,13 +124,18 @@ if not st.session_state.login:
 # ================= MAIN =================
 else:
 
+    # ===== SIDEBAR MENU (FIX STABIL) =====
     with st.sidebar:
-        st.write(f"👤 {st.session_state.user}")
+        st.markdown(f"### 👤 {st.session_state.user}")
 
-        if st.button("Dashboard"):
-            st.session_state.menu = "dashboard"
-        if st.button("Pengeluaran"):
-            st.session_state.menu = "pengeluaran"
+        menu = st.radio(
+            "Menu",
+            ["Dashboard", "Pengeluaran"],
+            index=0 if st.session_state.menu == "dashboard" else 1
+        )
+
+        st.session_state.menu = menu.lower()
+
         if st.button("Logout"):
             st.session_state.clear()
             st.rerun()
@@ -149,50 +153,41 @@ else:
             df["nominal"] = pd.to_numeric(df["nominal"], errors="coerce").fillna(0)
             df["bulan"] = df["tanggal"].dt.strftime("%B %Y")
 
-            # FILTER BULAN
             bulan_list = ["Semua"] + sorted(df["bulan"].dropna().unique())
             bulan = st.selectbox("Filter Bulan", bulan_list)
 
             df_filtered = df if bulan == "Semua" else df[df["bulan"] == bulan]
 
-            # TOTAL
             total = df_filtered["nominal"].sum()
             st.metric("Total Kas", rupiah(total))
 
-            # GRAFIK BULAN
+            # GRAFIK
             st.subheader("Grafik Kas per Bulan")
             grafik = df.groupby("bulan")["nominal"].sum()
             st.bar_chart(grafik)
 
-            # TABEL
             st.dataframe(df_filtered)
 
-            # PDF
             st.download_button("Download PDF", generate_pdf(df_filtered), "kas.pdf")
 
-            # ================= STATISTIK SISWA =================
+            # STATISTIK SISWA
             st.subheader("Statistik Siswa")
 
-            siswa = st.selectbox("Pilih Siswa", df_filtered["nama"].unique())
+            siswa_list = df_filtered["nama"].dropna().unique()
 
-            if st.button("Cek Statistik"):
-                data = df_filtered[df_filtered["nama"] == siswa]
-                hasil = data["status"].value_counts()
+            if len(siswa_list) > 0:
+                siswa = st.selectbox("Pilih Siswa", siswa_list)
 
-                st.bar_chart(hasil)
+                if st.button("Cek Statistik"):
+                    data = df_filtered[df_filtered["nama"] == siswa]
+                    hasil = data["status"].value_counts()
 
-                total = len(data)
-                telat = len(data[data["status"] == "Telat"])
-                persen = (telat / total) * 100 if total else 0
+                    st.bar_chart(hasil)
 
-                if persen < 20:
-                    st.success("Baik")
-                elif persen < 50:
-                    st.warning("Perlu peningkatan")
-                else:
-                    st.error("Sering telat")
+        else:
+            st.warning("Belum ada data kas")
 
-        # ================= INPUT =================
+        # INPUT
         st.subheader("Tambah Data")
 
         nama = st.text_input("Nama")
@@ -211,7 +206,7 @@ else:
             st.success("Data masuk")
             st.rerun()
 
-        # ================= HAPUS =================
+        # HAPUS
         st.subheader("Hapus Data")
 
         id_hapus = st.number_input("ID", step=1)
@@ -246,7 +241,14 @@ else:
 
         if not df_keluar.empty:
             st.dataframe(df_keluar)
-            st.download_button("Download PDF", generate_pdf(df_keluar), "pengeluaran.pdf")
+
+            st.download_button(
+                "Download PDF",
+                generate_pdf(df_keluar),
+                "pengeluaran.pdf"
+            )
+        else:
+            st.info("Belum ada pengeluaran")
 
         st.subheader("Tambah Pengeluaran")
 
