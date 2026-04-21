@@ -47,7 +47,6 @@ def generate_pdf(df):
 
     df_copy = df.copy()
 
-    # format nominal jika ada
     if "nominal" in df_copy.columns:
         df_copy["nominal"] = pd.to_numeric(df_copy["nominal"], errors="coerce").fillna(0)
         df_copy["nominal"] = df_copy["nominal"].astype(int).apply(lambda x: f"Rp {x:,}".replace(",", "."))
@@ -79,7 +78,6 @@ if not st.session_state.login:
 
     tab1, tab2 = st.tabs(["Login", "Register"])
 
-    # LOGIN
     with tab1:
         user = st.text_input("Username")
         pw = st.text_input("Password", type="password")
@@ -99,7 +97,6 @@ if not st.session_state.login:
                 else:
                     st.error("Username / Password salah")
 
-    # REGISTER
     with tab2:
         user = st.text_input("Username Baru")
         pw = st.text_input("Password Baru", type="password")
@@ -138,27 +135,65 @@ else:
         df = api_get("kas")
 
         if not df.empty:
-            df["nominal"] = pd.to_numeric(df["nominal"], errors="coerce").fillna(0)
 
-            total_kas = df["nominal"].sum()
+            # FIX DATA
+            df["tanggal"] = pd.to_datetime(df["tanggal"], errors="coerce")
+            df["nominal"] = pd.to_numeric(df["nominal"], errors="coerce").fillna(0)
+            df["bulan"] = df["tanggal"].dt.strftime("%B %Y")
+
+            # ================= FILTER =================
+            st.subheader("🔍 Filter Data")
+
+            col1, col2, col3 = st.columns(3)
+
+            with col1:
+                f_kelas = st.selectbox("Kelas", ["Semua"] + sorted(df["kelas"].dropna().unique()))
+
+            with col2:
+                f_jurusan = st.selectbox("Jurusan", ["Semua"] + sorted(df["jurusan"].dropna().unique()))
+
+            with col3:
+                f_bulan = st.selectbox("Bulan", ["Semua"] + sorted(df["bulan"].dropna().unique()))
+
+            df_filtered = df.copy()
+
+            if f_kelas != "Semua":
+                df_filtered = df_filtered[df_filtered["kelas"] == f_kelas]
+
+            if f_jurusan != "Semua":
+                df_filtered = df_filtered[df_filtered["jurusan"] == f_jurusan]
+
+            if f_bulan != "Semua":
+                df_filtered = df_filtered[df_filtered["bulan"] == f_bulan]
+
+            # ================= TOTAL =================
+            total_kas = df_filtered["nominal"].sum()
             st.metric("💰 Total Kas", rupiah(total_kas))
 
-            st.subheader("📋 Data Kas")
-            st.dataframe(df)
+            # ================= GRAFIK BULAN =================
+            st.subheader("📊 Grafik Kas per Bulan")
 
-            # DOWNLOAD PDF
+            grafik = df.groupby("bulan")["nominal"].sum().sort_index()
+            st.bar_chart(grafik)
+
+            # ================= DATA =================
+            st.subheader("📋 Data Kas")
+            st.dataframe(df_filtered)
+
+            # PDF sesuai filter
             st.download_button(
                 "⬇️ Download Data Kas (PDF)",
-                generate_pdf(df),
+                generate_pdf(df_filtered),
                 file_name="data_kas.pdf"
             )
 
-            # STATISTIK
+            # ================= STATISTIK SISWA =================
             st.subheader("📊 Statistik Per Siswa")
-            siswa = st.selectbox("Pilih Siswa", sorted(df["nama"].unique()))
+
+            siswa = st.selectbox("Pilih Siswa", sorted(df_filtered["nama"].unique()))
 
             if st.button("Cek Statistik"):
-                data = df[df["nama"] == siswa]
+                data = df_filtered[df_filtered["nama"] == siswa]
                 hasil = data["status"].value_counts()
 
                 st.bar_chart(hasil)
@@ -177,7 +212,7 @@ else:
         else:
             st.warning("Belum ada data kas")
 
-        # TAMBAH DATA
+        # ================= TAMBAH DATA =================
         st.subheader("➕ Tambah Data Kas")
 
         col1, col2 = st.columns(2)
@@ -208,8 +243,9 @@ else:
             st.success("Data berhasil disimpan")
             st.rerun()
 
-        # HAPUS DATA
+        # ================= HAPUS =================
         st.subheader("🗑️ Hapus Data")
+
         id_hapus = st.number_input("Masukkan ID", step=1)
 
         if st.button("Hapus"):
@@ -261,14 +297,13 @@ else:
             st.subheader("📋 Riwayat Pengeluaran")
             st.dataframe(df_keluar)
 
-            # DOWNLOAD PDF
             st.download_button(
                 "⬇️ Download Pengeluaran (PDF)",
                 generate_pdf(df_keluar),
                 file_name="data_pengeluaran.pdf"
             )
 
-    # LOGOUT
+    # ================= LOGOUT =================
     if st.button("Logout"):
         st.session_state.clear()
         st.rerun()
