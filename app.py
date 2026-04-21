@@ -113,7 +113,37 @@ else:
     else:
         st.warning("Belum ada data kas")
 
-    st.subheader("Tambah Data")
+st.subheader("➕ Tambah Data Kas")
+
+col1, col2 = st.columns(2)
+
+with col1:
+    nama = st.text_input("Nama")
+    tanggal = st.date_input("Tanggal")
+    status = st.selectbox("Status", ["Tepat Waktu", "Telat"])
+    kelas = st.text_input("Kelas")
+
+with col2:
+    jurusan = st.text_input("Jurusan")
+    keterangan = st.text_input("Keterangan")
+    nominal = st.number_input("Nominal", min_value=0)
+
+if st.button("Simpan Data"):
+
+    data = {
+        "nama": nama,
+        "tanggal": str(tanggal),
+        "status": status,
+        "kelas": kelas,
+        "jurusan": jurusan,
+        "keterangan": keterangan,
+        "nominal": int(nominal)
+    }
+
+    api_post("kas", data)
+
+    st.success("Data berhasil disimpan")
+    st.rerun()
 
     nama = st.text_input("Nama")
 
