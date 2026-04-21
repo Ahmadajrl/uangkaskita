@@ -86,7 +86,7 @@ st.title("Input Data Kas")
 
 nama = st.text_input("Nama")
 tanggal = st.date_input("Tanggal", date.today())
-status = st.selectbox("Status", ["Masuk", "Keluar"])
+status = st.selectbox("Status", ["Tepat Waktu", "Telat"])
 kelas = st.text_input("Kelas")
 jurusan = st.text_input("Jurusan")
 keterangan = st.text_input("Keterangan")
