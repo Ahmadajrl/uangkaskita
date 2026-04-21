@@ -7,30 +7,15 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 from reportlab.lib import colors
 
 # ================= CONFIG =================
-st.set_page_config(
-    page_title="KAS KITA",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+st.set_page_config(page_title="KAS KITA", layout="wide")
 
 API_URL = "https://script.google.com/macros/s/AKfycbyYoDZMhhhDBf3U3hlGWKepj8f4QkYekuRtx7UK4ctPzNbnlGU3QHPQjtT6C7eaZBix/exec"
 
 # ================= STYLE =================
 st.markdown("""
 <style>
-.stApp {
-    background: linear-gradient(135deg,#0f172a,#1e293b);
-    color: white;
-}
-.block-container {
-    padding: 1rem;
-}
-.card {
-    background: rgba(255,255,255,0.05);
-    padding: 20px;
-    border-radius: 16px;
-    margin-bottom: 15px;
-}
+.stApp {background: linear-gradient(135deg,#0f172a,#1e293b); color:white;}
+.card {background: rgba(255,255,255,0.05); padding:20px; border-radius:15px;}
 </style>
 """, unsafe_allow_html=True)
 
@@ -40,7 +25,11 @@ def hash_password(p):
 
 def api_get(table):
     try:
-        res = requests.get(API_URL, params={"action":"get","table":table})
+        res = requests.get(API_URL, params={
+            "action":"get",
+            "table":table,
+            "owner": st.session_state.user
+        })
         return pd.DataFrame(res.json())
     except:
         return pd.DataFrame()
@@ -67,17 +56,17 @@ def generate_pdf(df):
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer)
 
-    df_copy = df.copy()
+    df = df.copy()
 
-    if "nominal" in df_copy.columns:
-        df_copy["nominal"] = pd.to_numeric(df_copy["nominal"], errors="coerce").fillna(0)
-        df_copy["nominal"] = df_copy["nominal"].astype(int).apply(lambda x: f"Rp {x:,}".replace(",", "."))
+    if "nominal" in df.columns:
+        df["nominal"] = pd.to_numeric(df["nominal"], errors="coerce").fillna(0)
+        df["nominal"] = df["nominal"].astype(int)
 
-    data = [df_copy.columns.tolist()] + df_copy.values.tolist()
+    data = [df.columns.tolist()] + df.values.tolist()
 
     table = Table(data)
     table.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,0), colors.grey),
+        ('BACKGROUND',(0,0),(-1,0),colors.grey),
         ('TEXTCOLOR',(0,0),(-1,0),colors.white),
         ('GRID',(0,0),(-1,-1),1,colors.black)
     ]))
@@ -89,10 +78,8 @@ def generate_pdf(df):
 # ================= SESSION =================
 if "login" not in st.session_state:
     st.session_state.login = False
-
 if "user" not in st.session_state:
     st.session_state.user = ""
-
 if "menu" not in st.session_state:
     st.session_state.menu = "dashboard"
 
@@ -108,12 +95,10 @@ if not st.session_state.login:
         pw = st.text_input("Password", type="password")
 
         if st.button("Login"):
-            df = api_get("admin")
+            df = requests.get(API_URL, params={"action":"get","table":"admin"}).json()
+            df = pd.DataFrame(df)
 
             if not df.empty:
-                df["username"] = df["username"].astype(str)
-                df["password"] = df["password"].astype(str)
-
                 data = df[
                     (df["username"] == user) &
                     (df["password"] == hash_password(pw))
@@ -140,17 +125,14 @@ if not st.session_state.login:
 # ================= MAIN =================
 else:
 
-    # SIDEBAR
     with st.sidebar:
-        st.markdown(f"### 👤 {st.session_state.user}")
+        st.write(f"👤 {st.session_state.user}")
 
-        if st.button("📊 Dashboard"):
+        if st.button("Dashboard"):
             st.session_state.menu = "dashboard"
-
-        if st.button("💸 Pengeluaran"):
+        if st.button("Pengeluaran"):
             st.session_state.menu = "pengeluaran"
-
-        if st.button("🚪 Logout"):
+        if st.button("Logout"):
             st.session_state.clear()
             st.rerun()
 
@@ -163,51 +145,80 @@ else:
 
         if not df.empty:
 
-            # FILTER USER (PENTING)
-            df = df[df["owner"] == st.session_state.user]
-
             df["tanggal"] = pd.to_datetime(df["tanggal"], errors="coerce")
             df["nominal"] = pd.to_numeric(df["nominal"], errors="coerce").fillna(0)
             df["bulan"] = df["tanggal"].dt.strftime("%B %Y")
 
             # FILTER BULAN
-            bulan_list = ["Semua"] + sorted(df["bulan"].dropna().unique().tolist())
-            bulan = st.selectbox("📅 Filter Bulan", bulan_list)
+            bulan_list = ["Semua"] + sorted(df["bulan"].dropna().unique())
+            bulan = st.selectbox("Filter Bulan", bulan_list)
 
-            if bulan != "Semua":
-                df = df[df["bulan"] == bulan]
+            df_filtered = df if bulan == "Semua" else df[df["bulan"] == bulan]
 
-            total = df["nominal"].sum()
+            # TOTAL
+            total = df_filtered["nominal"].sum()
+            st.metric("Total Kas", rupiah(total))
 
-            st.markdown(f"<div class='card'>💰 Total Kas: {rupiah(total)}</div>", unsafe_allow_html=True)
-
-            # GRAFIK
+            # GRAFIK BULAN
+            st.subheader("Grafik Kas per Bulan")
             grafik = df.groupby("bulan")["nominal"].sum()
             st.bar_chart(grafik)
 
-            st.dataframe(df)
+            # TABEL
+            st.dataframe(df_filtered)
 
-            st.download_button(
-                "Download PDF",
-                generate_pdf(df),
-                "kas.pdf"
-            )
+            # PDF
+            st.download_button("Download PDF", generate_pdf(df_filtered), "kas.pdf")
 
-        # INPUT DATA
+            # ================= STATISTIK SISWA =================
+            st.subheader("Statistik Siswa")
+
+            siswa = st.selectbox("Pilih Siswa", df_filtered["nama"].unique())
+
+            if st.button("Cek Statistik"):
+                data = df_filtered[df_filtered["nama"] == siswa]
+                hasil = data["status"].value_counts()
+
+                st.bar_chart(hasil)
+
+                total = len(data)
+                telat = len(data[data["status"] == "Telat"])
+                persen = (telat / total) * 100 if total else 0
+
+                if persen < 20:
+                    st.success("Baik")
+                elif persen < 50:
+                    st.warning("Perlu peningkatan")
+                else:
+                    st.error("Sering telat")
+
+        # ================= INPUT =================
         st.subheader("Tambah Data")
 
         nama = st.text_input("Nama")
         tanggal = st.date_input("Tanggal")
+        status = st.selectbox("Status", ["Tepat Waktu", "Telat"])
         nominal = st.number_input("Nominal", min_value=0)
 
         if st.button("Simpan"):
             api_post("kas", {
                 "nama": nama,
                 "tanggal": str(tanggal),
+                "status": status,
                 "nominal": int(nominal),
                 "owner": st.session_state.user
             })
-            st.success("Tersimpan")
+            st.success("Data masuk")
+            st.rerun()
+
+        # ================= HAPUS =================
+        st.subheader("Hapus Data")
+
+        id_hapus = st.number_input("ID", step=1)
+
+        if st.button("Hapus"):
+            api_delete("kas", int(id_hapus))
+            st.success("Data dihapus")
             st.rerun()
 
     # ================= PENGELUARAN =================
@@ -215,22 +226,27 @@ else:
 
         st.title("💸 Pengeluaran")
 
-        df = api_get("pengeluaran")
+        df_keluar = api_get("pengeluaran")
+        df_masuk = api_get("kas")
 
-        if not df.empty:
-            df = df[df["owner"] == st.session_state.user]
-            df["nominal"] = pd.to_numeric(df["nominal"], errors="coerce").fillna(0)
+        if not df_keluar.empty:
+            df_keluar["nominal"] = pd.to_numeric(df_keluar["nominal"], errors="coerce").fillna(0)
 
-            total = df["nominal"].sum()
-            st.markdown(f"<div class='card'>Total Pengeluaran: {rupiah(total)}</div>", unsafe_allow_html=True)
+        if not df_masuk.empty:
+            df_masuk["nominal"] = pd.to_numeric(df_masuk["nominal"], errors="coerce").fillna(0)
 
-            st.dataframe(df)
+        total_masuk = df_masuk["nominal"].sum() if not df_masuk.empty else 0
+        total_keluar = df_keluar["nominal"].sum() if not df_keluar.empty else 0
+        saldo = total_masuk - total_keluar
 
-            st.download_button(
-                "Download PDF",
-                generate_pdf(df),
-                "pengeluaran.pdf"
-            )
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Kas", rupiah(total_masuk))
+        col2.metric("Pengeluaran", rupiah(total_keluar))
+        col3.metric("Saldo", rupiah(saldo))
+
+        if not df_keluar.empty:
+            st.dataframe(df_keluar)
+            st.download_button("Download PDF", generate_pdf(df_keluar), "pengeluaran.pdf")
 
         st.subheader("Tambah Pengeluaran")
 
@@ -245,5 +261,5 @@ else:
                 "nominal": int(nom),
                 "owner": st.session_state.user
             })
-            st.success("Tersimpan")
+            st.success("Pengeluaran ditambah")
             st.rerun()
