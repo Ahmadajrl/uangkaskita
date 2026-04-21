@@ -81,16 +81,14 @@ def generate_pdf(df):
     return buffer
 
 # ================= SESSION =================
-defaults = {
-    "login": False,
-    "role": None,
-    "kelas": None,
-    "jurusan": None,
-}
-
-for k,v in defaults.items():
-    if k not in st.session_state:
-        st.session_state[k] = v
+if "login" not in st.session_state:
+    st.session_state.login = False
+if "role" not in st.session_state:
+    st.session_state.role = None
+if "kelas" not in st.session_state:
+    st.session_state.kelas = None
+if "jurusan" not in st.session_state:
+    st.session_state.jurusan = None
 
 # ================= LOGIN PAGE =================
 if not st.session_state.login:
@@ -101,15 +99,15 @@ if not st.session_state.login:
 
     # ===== LOGIN =====
     with tab1:
-        role = st.selectbox("Login sebagai", ["Admin", "Developer"])
+        role = st.selectbox("Login sebagai", ["Admin", "Developer"], key="role_login")
 
         if role == "Admin":
-            user = st.text_input("Username")
-            pw = st.text_input("Password", type="password")
-            kelas = st.selectbox("Kelas", ["10","11","12"])
-            jurusan = st.text_input("Jurusan")
+            user = st.text_input("Username", key="login_user")
+            pw = st.text_input("Password", type="password", key="login_pass")
+            kelas = st.selectbox("Kelas", ["10","11","12"], key="login_kelas")
+            jurusan = st.text_input("Jurusan", key="login_jurusan")
 
-            if st.button("Login"):
+            if st.button("Login", key="btn_login"):
                 df = api_get("admin")
 
                 if not df.empty:
@@ -128,10 +126,10 @@ if not st.session_state.login:
                         st.error("Login gagal")
 
         else:
-            user = st.text_input("Username Developer")
-            pw = st.text_input("Password Developer", type="password")
+            user = st.text_input("Username Developer", key="dev_user")
+            pw = st.text_input("Password Developer", type="password", key="dev_pass")
 
-            if st.button("Login Dev"):
+            if st.button("Login Dev", key="btn_dev"):
                 if user == DEV_USER and pw == DEV_PASS:
                     st.session_state.login = True
                     st.session_state.role = "dev"
@@ -141,15 +139,13 @@ if not st.session_state.login:
 
     # ===== REGISTER =====
     with tab2:
-        st.subheader("Register Admin")
+        user = st.text_input("Username Baru", key="reg_user")
+        pw = st.text_input("Password Baru", type="password", key="reg_pass")
+        email = st.text_input("Email", key="reg_email")
+        kelas = st.selectbox("Kelas", ["10","11","12"], key="reg_kelas")
+        jurusan = st.text_input("Jurusan", key="reg_jurusan")
 
-        user = st.text_input("Username Baru")
-        pw = st.text_input("Password Baru", type="password")
-        email = st.text_input("Email")
-        kelas = st.selectbox("Kelas", ["10","11","12"])
-        jurusan = st.text_input("Jurusan")
-
-        if st.button("Daftar"):
+        if st.button("Daftar", key="btn_reg"):
             data = {
                 "username": user,
                 "password": hash_password(pw),
@@ -162,11 +158,11 @@ if not st.session_state.login:
 
     # ===== RESET =====
     with tab3:
-        user = st.text_input("Username")
-        email = st.text_input("Email")
-        new_pass = st.text_input("Password Baru", type="password")
+        user = st.text_input("Username", key="reset_user")
+        email = st.text_input("Email", key="reset_email")
+        new_pass = st.text_input("Password Baru", type="password", key="reset_pass")
 
-        if st.button("Reset Password"):
+        if st.button("Reset Password", key="btn_reset"):
             df = api_get("admin")
 
             data = df[
@@ -175,10 +171,10 @@ if not st.session_state.login:
             ]
 
             if not data.empty:
-                id_user = data.iloc[0]["id"]
+                id_user = int(data.iloc[0]["id"])
 
                 api_update("admin", {
-                    "id": int(id_user),
+                    "id": id_user,
                     "password": hash_password(new_pass)
                 })
 
@@ -186,35 +182,32 @@ if not st.session_state.login:
             else:
                 st.error("Data tidak ditemukan")
 
-# ================= MAIN APP =================
+# ================= MAIN =================
 else:
 
     st.title("📊 Dashboard KAS")
 
-    # ===== ADMIN =====
     if st.session_state.role == "admin":
 
         st.success(f"Kelas {st.session_state.kelas} - {st.session_state.jurusan}")
 
-        menu = st.radio("Menu", ["Dashboard","Pengeluaran"])
+        menu = st.radio("Menu", ["Dashboard","Pengeluaran"], key="menu_admin")
 
         df = api_get("kas")
 
         if not df.empty:
-            df["nominal"] = df["nominal"].astype(int)
+            df["nominal"] = pd.to_numeric(df["nominal"], errors="coerce").fillna(0)
 
         # ===== DASHBOARD =====
         if menu == "Dashboard":
 
-            st.subheader("➕ Input Kas")
+            nama = st.text_input("Nama", key="nama_input")
+            tgl = st.date_input("Tanggal", key="tgl_input")
+            status = st.selectbox("Status", ["Tepat Waktu","Telat"], key="status_input")
+            ket = st.text_input("Keterangan", key="ket_input")
+            nom = st.text_input("Nominal", key="nom_input")
 
-            nama = st.text_input("Nama")
-            tgl = st.date_input("Tanggal")
-            status = st.selectbox("Status", ["Tepat Waktu","Telat"])
-            ket = st.text_input("Keterangan")
-            nom = st.text_input("Nominal")
-
-            if st.button("Simpan"):
+            if st.button("Simpan", key="btn_simpan"):
                 data = {
                     "nama": nama,
                     "tanggal": tgl.strftime("%Y-%m-%d"),
@@ -239,24 +232,21 @@ else:
 
                 st.dataframe(df)
 
-                st.download_button("Download PDF", generate_pdf(df), "kas.pdf")
+                st.download_button("Download PDF", generate_pdf(df), "kas.pdf", key="pdf_kas")
 
-                # HAPUS
-                id_hapus = st.number_input("ID Hapus", step=1)
-                if st.button("Hapus Data"):
+                id_hapus = st.number_input("ID Hapus", step=1, key="hapus_id")
+                if st.button("Hapus Data", key="btn_hapus"):
                     api_delete("kas", int(id_hapus))
                     st.rerun()
 
         # ===== PENGELUARAN =====
         elif menu == "Pengeluaran":
 
-            st.subheader("💸 Input Pengeluaran")
+            tgl = st.date_input("Tanggal", key="tgl_keluar")
+            ket = st.text_input("Keterangan", key="ket_keluar")
+            nom = st.text_input("Nominal", key="nom_keluar")
 
-            tgl = st.date_input("Tanggal")
-            ket = st.text_input("Keterangan")
-            nom = st.text_input("Nominal")
-
-            if st.button("Simpan Pengeluaran"):
+            if st.button("Simpan Pengeluaran", key="btn_keluar"):
                 data = {
                     "tanggal": tgl.strftime("%Y-%m-%d"),
                     "kelas": st.session_state.kelas,
@@ -270,7 +260,7 @@ else:
             df_keluar = api_get("pengeluaran")
 
             if not df_keluar.empty:
-                df_keluar["nominal"] = df_keluar["nominal"].astype(int)
+                df_keluar["nominal"] = pd.to_numeric(df_keluar["nominal"], errors="coerce").fillna(0)
 
                 total_keluar = df_keluar["nominal"].sum()
                 total_masuk = df["nominal"].sum() if not df.empty else 0
@@ -283,7 +273,6 @@ else:
 
                 st.dataframe(df_keluar)
 
-    # ===== DEV =====
     elif st.session_state.role == "dev":
 
         st.subheader("🛠️ Developer Panel")
@@ -292,6 +281,6 @@ else:
         st.dataframe(api_get("kas"))
         st.dataframe(api_get("pengeluaran"))
 
-    if st.button("Logout"):
+    if st.button("Logout", key="logout"):
         st.session_state.clear()
         st.rerun()
