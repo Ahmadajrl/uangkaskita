@@ -3,7 +3,35 @@ import pandas as pd
 import sqlite3
 import hashlib
 import io
+import requests
+from datetime import date
 
+st.title("Input Data Kas")
+
+nama = st.text_input("Nama")
+tanggal = st.date_input("Tanggal", date.today())
+status = st.selectbox("Status", ["Masuk", "Keluar"])
+kelas = st.text_input("Kelas")
+jurusan = st.text_input("Jurusan")
+keterangan = st.text_input("Keterangan")
+nominal = st.number_input("Nominal", min_value=0)
+
+if st.button("Simpan"):
+    data = {
+        "nama": nama,
+        "tanggal": str(tanggal),
+        "status": status,
+        "kelas": kelas,
+        "jurusan": jurusan,
+        "keterangan": keterangan,
+        "nominal": nominal
+    }
+
+    url = "https://script.google.com/macros/s/AKfycbx-e8pKl7d42dmKU0cIwcXKAo9Y-JiMRt0UYpIgqZEWNCZ1A7rNfW1Nc0upWYJq1_n4/exec"
+
+    requests.post(url, json=data)
+
+    st.success("Data berhasil disimpan")
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
