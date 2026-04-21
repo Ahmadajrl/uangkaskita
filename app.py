@@ -2,6 +2,9 @@ import streamlit as st
 import pandas as pd
 import hashlib
 import requests
+import io
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
+from reportlab.lib import colors
 
 # ================= CONFIG =================
 st.set_page_config(page_title="KAS KITA", layout="wide")
@@ -36,6 +39,31 @@ def api_delete(table, id):
 
 def rupiah(x):
     return f"Rp {int(x):,}".replace(",", ".")
+
+# ================= PDF =================
+def generate_pdf(df):
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer)
+
+    df_copy = df.copy()
+
+    # format nominal jika ada
+    if "nominal" in df_copy.columns:
+        df_copy["nominal"] = pd.to_numeric(df_copy["nominal"], errors="coerce").fillna(0)
+        df_copy["nominal"] = df_copy["nominal"].astype(int).apply(lambda x: f"Rp {x:,}".replace(",", "."))
+
+    data = [df_copy.columns.tolist()] + df_copy.values.tolist()
+
+    table = Table(data)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.grey),
+        ('TEXTCOLOR',(0,0),(-1,0),colors.white),
+        ('GRID',(0,0),(-1,-1),1,colors.black)
+    ]))
+
+    doc.build([table])
+    buffer.seek(0)
+    return buffer
 
 # ================= SESSION =================
 if "login" not in st.session_state:
@@ -92,7 +120,6 @@ else:
 
     st.title("📊 Dashboard KAS")
 
-    # MENU
     col1, col2 = st.columns(2)
 
     with col1:
@@ -111,21 +138,23 @@ else:
         df = api_get("kas")
 
         if not df.empty:
-
-            # FIX TIPE DATA
             df["nominal"] = pd.to_numeric(df["nominal"], errors="coerce").fillna(0)
 
-            # TOTAL KAS
             total_kas = df["nominal"].sum()
             st.metric("💰 Total Kas", rupiah(total_kas))
 
-            # DATA
             st.subheader("📋 Data Kas")
             st.dataframe(df)
 
-            # ================= STATISTIK =================
-            st.subheader("📊 Statistik Per Siswa")
+            # DOWNLOAD PDF
+            st.download_button(
+                "⬇️ Download Data Kas (PDF)",
+                generate_pdf(df),
+                file_name="data_kas.pdf"
+            )
 
+            # STATISTIK
+            st.subheader("📊 Statistik Per Siswa")
             siswa = st.selectbox("Pilih Siswa", sorted(df["nama"].unique()))
 
             if st.button("Cek Statistik"):
@@ -148,7 +177,7 @@ else:
         else:
             st.warning("Belum ada data kas")
 
-        # ================= TAMBAH DATA =================
+        # TAMBAH DATA
         st.subheader("➕ Tambah Data Kas")
 
         col1, col2 = st.columns(2)
@@ -179,9 +208,8 @@ else:
             st.success("Data berhasil disimpan")
             st.rerun()
 
-        # ================= HAPUS DATA =================
+        # HAPUS DATA
         st.subheader("🗑️ Hapus Data")
-
         id_hapus = st.number_input("Masukkan ID", step=1)
 
         if st.button("Hapus"):
@@ -214,7 +242,6 @@ else:
         df_keluar = api_get("pengeluaran")
         df_masuk = api_get("kas")
 
-        # FIX TIPE DATA (INI YANG NGATASI ERROR KAMU)
         if not df_keluar.empty:
             df_keluar["nominal"] = pd.to_numeric(df_keluar["nominal"], errors="coerce").fillna(0)
 
@@ -234,7 +261,14 @@ else:
             st.subheader("📋 Riwayat Pengeluaran")
             st.dataframe(df_keluar)
 
-    # ================= LOGOUT =================
+            # DOWNLOAD PDF
+            st.download_button(
+                "⬇️ Download Pengeluaran (PDF)",
+                generate_pdf(df_keluar),
+                file_name="data_pengeluaran.pdf"
+            )
+
+    # LOGOUT
     if st.button("Logout"):
         st.session_state.clear()
         st.rerun()
