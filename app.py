@@ -78,6 +78,7 @@ if not st.session_state.login:
 
     tab1, tab2 = st.tabs(["Login", "Register"])
 
+    # LOGIN
     with tab1:
         user = st.text_input("Username")
         pw = st.text_input("Password", type="password")
@@ -86,6 +87,9 @@ if not st.session_state.login:
             df = api_get("admin")
 
             if not df.empty:
+                df["username"] = df["username"].astype(str)
+                df["password"] = df["password"].astype(str)
+
                 data = df[
                     (df["username"] == user) &
                     (df["password"] == hash_password(pw))
@@ -97,6 +101,7 @@ if not st.session_state.login:
                 else:
                     st.error("Username / Password salah")
 
+    # REGISTER
     with tab2:
         user = st.text_input("Username Baru")
         pw = st.text_input("Password Baru", type="password")
@@ -139,6 +144,12 @@ else:
             # FIX DATA
             df["tanggal"] = pd.to_datetime(df["tanggal"], errors="coerce")
             df["nominal"] = pd.to_numeric(df["nominal"], errors="coerce").fillna(0)
+
+            # FIX TIPE DATA (PENTING)
+            df["kelas"] = df["kelas"].astype(str)
+            df["jurusan"] = df["jurusan"].astype(str)
+
+            # BULAN
             df["bulan"] = df["tanggal"].dt.strftime("%B %Y")
 
             # ================= FILTER =================
@@ -147,14 +158,24 @@ else:
             col1, col2, col3 = st.columns(3)
 
             with col1:
-                f_kelas = st.selectbox("Kelas", ["Semua"] + sorted(df["kelas"].dropna().unique()))
+                f_kelas = st.selectbox(
+                    "Kelas",
+                    ["Semua"] + sorted(df["kelas"].dropna().astype(str).unique().tolist())
+                )
 
             with col2:
-                f_jurusan = st.selectbox("Jurusan", ["Semua"] + sorted(df["jurusan"].dropna().unique()))
+                f_jurusan = st.selectbox(
+                    "Jurusan",
+                    ["Semua"] + sorted(df["jurusan"].dropna().astype(str).unique().tolist())
+                )
 
             with col3:
-                f_bulan = st.selectbox("Bulan", ["Semua"] + sorted(df["bulan"].dropna().unique()))
+                f_bulan = st.selectbox(
+                    "Bulan",
+                    ["Semua"] + sorted(df["bulan"].dropna().astype(str).unique().tolist())
+                )
 
+            # FILTER LOGIC
             df_filtered = df.copy()
 
             if f_kelas != "Semua":
@@ -170,17 +191,15 @@ else:
             total_kas = df_filtered["nominal"].sum()
             st.metric("💰 Total Kas", rupiah(total_kas))
 
-            # ================= GRAFIK BULAN =================
+            # ================= GRAFIK =================
             st.subheader("📊 Grafik Kas per Bulan")
-
-            grafik = df.groupby("bulan")["nominal"].sum().sort_index()
+            grafik = df.groupby("bulan")["nominal"].sum()
             st.bar_chart(grafik)
 
             # ================= DATA =================
             st.subheader("📋 Data Kas")
             st.dataframe(df_filtered)
 
-            # PDF sesuai filter
             st.download_button(
                 "⬇️ Download Data Kas (PDF)",
                 generate_pdf(df_filtered),
@@ -190,24 +209,25 @@ else:
             # ================= STATISTIK SISWA =================
             st.subheader("📊 Statistik Per Siswa")
 
-            siswa = st.selectbox("Pilih Siswa", sorted(df_filtered["nama"].unique()))
+            if not df_filtered.empty:
+                siswa = st.selectbox("Pilih Siswa", sorted(df_filtered["nama"].astype(str).unique()))
 
-            if st.button("Cek Statistik"):
-                data = df_filtered[df_filtered["nama"] == siswa]
-                hasil = data["status"].value_counts()
+                if st.button("Cek Statistik"):
+                    data = df_filtered[df_filtered["nama"] == siswa]
+                    hasil = data["status"].value_counts()
 
-                st.bar_chart(hasil)
+                    st.bar_chart(hasil)
 
-                total = len(data)
-                telat = len(data[data["status"] == "Telat"])
-                persen = (telat / total) * 100 if total > 0 else 0
+                    total = len(data)
+                    telat = len(data[data["status"] == "Telat"])
+                    persen = (telat / total) * 100 if total > 0 else 0
 
-                if persen < 20:
-                    st.success("Performa sangat baik 👍")
-                elif persen < 50:
-                    st.warning("Perlu peningkatan ⚠️")
-                else:
-                    st.error("Sering telat ❌")
+                    if persen < 20:
+                        st.success("Performa sangat baik 👍")
+                    elif persen < 50:
+                        st.warning("Perlu peningkatan ⚠️")
+                    else:
+                        st.error("Sering telat ❌")
 
         else:
             st.warning("Belum ada data kas")
