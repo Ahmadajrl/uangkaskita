@@ -13,7 +13,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-API_URL = "https://script.google.com/macros/s/AKfycbym98CvlKkmJ2BawYlaEEqGKkN5BTdEcmvWdfzB2B6J_zSBY8he0S1r7e70T8phQ3nR/exec"
+API_URL = "https://script.google.com/macros/s/AKfycbyYoDZMhhhDBf3U3hlGWKepj8f4QkYekuRtx7UK4ctPzNbnlGU3QHPQjtT6C7eaZBix/exec"
 
 # ================= GLOBAL CSS =================
 st.markdown("""
