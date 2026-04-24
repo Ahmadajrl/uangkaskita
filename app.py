@@ -7,7 +7,11 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 from reportlab.lib import colors
 
 # ================= CONFIG =================
-st.set_page_config(page_title="KAS KITA", layout="wide")
+st.set_page_config(
+    page_title="KAS KITA",
+    page_icon="icon.png",  # 👈 icon kamu
+    layout="wide"
+)
 
 
 API_URL = "https://script.google.com/macros/s/AKfycbym98CvlKkmJ2BawYlaEEqGKkN5BTdEcmvWdfzB2B6J_zSBY8he0S1r7e70T8phQ3nR/exec"
