@@ -539,7 +539,7 @@ if "user" not in st.session_state:
 # ================= AUTH =================
 if not st.session_state.login:
 
-    st.title("Login terlebih dahulu")
+    st.title("Buat Akun")
 
     tab1, tab2 = st.tabs(["Login", "Register"])
 
