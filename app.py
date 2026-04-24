@@ -714,7 +714,7 @@ else:
         col1, col2, col3 = st.columns(3)
         col1.metric("Total Kas", rupiah(total_masuk))
         col2.metric("Pengeluaran", rupiah(total_keluar))
-        col3.metric("Saldo", rupiah(saldo))
+        col3.metric("Total Kas saat ini", rupiah(saldo))
 
         if not df_keluar.empty:
             st.subheader("Riwayat Pengeluaran")
