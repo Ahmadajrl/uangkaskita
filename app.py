@@ -667,7 +667,7 @@ else:
         kelas = st.text_input("Kelas")
         jurusan = st.text_input("Jurusan")
         keterangan = st.text_input("Keterangan (contoh : Lunas)")
-        nominal = st.number_input("Masukkan Nominal KAS", min_value=0)
+        nominal = st.number_input("Nominal", min_value=0)
 
         if st.button("Simpan Data"):
             api_post("kas", {
