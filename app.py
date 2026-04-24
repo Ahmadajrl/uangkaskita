@@ -9,7 +9,7 @@ from reportlab.lib import colors
 # ================= CONFIG =================
 st.set_page_config(
     page_title="KAS KITA",
-    page_icon="icon.png",  # 👈 icon kamu
+    page_icon="icon.png",
     layout="wide"
 )
 
