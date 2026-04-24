@@ -535,7 +535,7 @@ if "user" not in st.session_state:
 # ================= AUTH =================
 if not st.session_state.login:
 
-    st.title("💰 KAS KITA")
+    st.title("KAS KITA")
 
     tab1, tab2 = st.tabs(["Login", "Register"])
 
@@ -581,18 +581,18 @@ if not st.session_state.login:
 # ================= MAIN =================
 else:
 
-    st.title("📊 Dashboard KAS")
-    st.write(f"👤 User: {st.session_state.user}")
+    st.title("Dashboard KAS")
+    st.write(f"User: {st.session_state.user}")
 
     col1, col2 = st.columns(2)
 
     with col1:
-        if st.button("📊 Dashboard"):
+        if st.button("Tambah Pemasukan"):
             st.session_state.menu = "dashboard"
             st.rerun()
 
     with col2:
-        if st.button("💸 Pengeluaran"):
+        if st.button("Tambah Pengeluaran"):
             st.session_state.menu = "pengeluaran"
             st.rerun()
 
@@ -615,14 +615,14 @@ else:
             if "bulan" in df.columns:
                 bulan_list += sorted(df["bulan"].dropna().unique().tolist())
 
-            bulan = st.selectbox("📅 Filter Bulan", bulan_list)
+            bulan = st.selectbox("Filter Bulan", bulan_list)
 
             if bulan != "Semua":
                 df = df[df["bulan"] == bulan]
 
             # ================= TOTAL =================
             total_kas = df["nominal"].sum()
-            st.metric("💰 Total Kas", rupiah(total_kas))
+            st.metric("Total Kas saat ini", rupiah(total_kas))
 
             # ================= GRAFIK =================
             if "bulan" in df.columns:
@@ -630,19 +630,19 @@ else:
                 st.bar_chart(grafik)
 
             # ================= TABEL =================
-            st.subheader("📋 Data Kas")
+            st.subheader("Data Kas Kelas")
             st.dataframe(df)
 
             # ================= PDF =================
             st.download_button(
-                "⬇️ Download PDF",
+                "Download PDF",
                 generate_pdf(df),
                 "kas.pdf"
             )
 
             # ================= STATISTIK SISWA =================
             if "nama" in df.columns:
-                st.subheader("📊 Statistik Siswa")
+                st.subheader("Statistik Siswa")
 
                 siswa_list = df["nama"].dropna().unique().tolist()
                 if siswa_list:
@@ -659,7 +659,7 @@ else:
             st.warning("Belum ada data kas")
 
         # ================= TAMBAH DATA =================
-        st.subheader("➕ Tambah Data Kas")
+        st.subheader("Tambah Data Kas")
 
         nama = st.text_input("Nama")
         tanggal = st.date_input("Tanggal")
@@ -684,7 +684,7 @@ else:
             st.rerun()
 
         # ================= HAPUS =================
-        st.subheader("🗑️ Hapus Data")
+        st.subheader("Hapus Data")
 
         id_hapus = st.number_input("Masukkan ID", step=1)
 
@@ -696,7 +696,7 @@ else:
     # ================= PENGELUARAN =================
     elif st.session_state.menu == "pengeluaran":
 
-        st.title("💸 Pengeluaran")
+        st.title("Dashboard Pengeluaran")
 
         df_keluar = api_get("pengeluaran")
         df_masuk = api_get("kas")
@@ -717,11 +717,11 @@ else:
         col3.metric("Saldo", rupiah(saldo))
 
         if not df_keluar.empty:
-            st.subheader("📋 Riwayat Pengeluaran")
+            st.subheader("Riwayat Pengeluaran")
             st.dataframe(df_keluar)
 
             st.download_button(
-                "⬇️ Download PDF",
+                "Download PDF",
                 generate_pdf(df_keluar),
                 "pengeluaran.pdf"
             )
