@@ -564,34 +564,34 @@ if not st.session_state.login:
     tab1, tab2 = st.tabs(["Login", "Register"])
 
 # ================= LOGIN =================
-if st.button("Login"):
-    if not user.strip() or not pw.strip():
-        st.warning("Username dan password wajib diisi")
-    else:
-        with st.spinner("Login..."):
-            try:
-                df = pd.DataFrame(requests.get(API_URL, params={
-                    "action": "get",
-                    "table": "admin"
-                }).json())
+with tab1:
+    user = st.text_input("Username")
+    pw = st.text_input("Password", type="password")
 
-                if not df.empty:
-                    df["username"] = df["username"].astype(str)
-                    df["password"] = df["password"].astype(str)
+    if st.button("Login"):
+        if not user or not pw:
+            st.warning("Username dan password wajib diisi")
+        else:
+            df = pd.DataFrame(requests.get(API_URL, params={
+                "action": "get",
+                "table": "admin"
+            }).json())
 
-                    data = df[
-                        (df["username"] == user) &
-                        (df["password"] == hash_password(pw))
-                    ]
+            if not df.empty:
+                df["username"] = df["username"].astype(str)
+                df["password"] = df["password"].astype(str)
 
-                    if not data.empty:
-                        st.session_state.login = True
-                        st.session_state.user = user
-                        st.rerun()
-                    else:
-                        st.error("Username / Password salah")
-            except:
-                st.error("Gagal koneksi ke server")
+                data = df[
+                    (df["username"] == user) &
+                    (df["password"] == hash_password(pw))
+                ]
+
+                if not data.empty:
+                    st.session_state.login = True
+                    st.session_state.user = user
+                    st.rerun()
+                else:
+                    st.error("Username / Password salah")
 
     # REGISTER
     with tab2:
