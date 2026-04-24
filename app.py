@@ -501,7 +501,27 @@ def api_delete(table, id):
 
 def rupiah(x):
     return f"Rp {int(x):,}".replace(",", ".")
+    
+def validasi_kas(nama, kelas, jurusan, nominal):
+    if not nama.strip():
+        return "Nama tidak boleh kosong"
+    
+    if len(nama) < 3:
+        return "Nama terlalu pendek"
 
+    if not kelas.strip():
+        return "Kelas tidak boleh kosong"
+
+    if not jurusan.strip():
+        return "Jurusan tidak boleh kosong"
+
+    if nominal <= 0:
+        return "Nominal harus lebih dari 0"
+
+    if nominal > 1_000_000:
+        return "Nominal terlalu besar (Maks 1 Juta)"
+
+    return None
 # ================= PDF =================
 def generate_pdf(df):
     buffer = io.BytesIO()
@@ -549,6 +569,9 @@ if not st.session_state.login:
         pw = st.text_input("Password", type="password")
 
         if st.button("Login"):
+            if not user or not pw:
+                st.warning("Username dan password wajib diisi")
+            else:
             df = pd.DataFrame(requests.get(API_URL, params={
                 "action": "get",
                 "table": "admin"
@@ -576,11 +599,19 @@ if not st.session_state.login:
         pw = st.text_input("Password Baru", type="password")
 
         if st.button("Daftar"):
-            api_post("admin", {
-                "username": user,
-                "password": hash_password(pw)
-            })
-            st.success("Akun berhasil dibuat")
+
+            if not user or not pw:
+                st.warning("Username & Password wajib diisi")
+
+            elif len(pw) < 6:
+                st.warning("Password minimal 6 karakter")
+
+            else:
+                api_post("admin", {
+                    "username": user.strip(),
+                    "password": hash_password(pw)
+                })
+                st.success("Akun berhasil dibuat")
 
 # ================= MAIN =================
 else:
@@ -674,18 +705,24 @@ else:
         nominal = st.number_input("Nominal", min_value=0)
 
         if st.button("Simpan Data"):
-            api_post("kas", {
-                "nama": nama,
-                "tanggal": str(tanggal),
-                "status": status,
-                "kelas": kelas,
-                "jurusan": jurusan,
-                "keterangan": keterangan,
-                "nominal": int(nominal),
-                "owner": st.session_state.user
-            })
-            st.success("Data berhasil disimpan")
-            st.rerun()
+
+            error = validasi_kas(nama, kelas, jurusan, nominal)
+
+            if error:
+                st.error(f"❌ {error}")
+            else:
+                api_post("kas", {
+                    "nama": nama.strip(),
+                    "tanggal": str(tanggal),
+                    "status": status,
+                    "kelas": kelas.strip(),
+                    "jurusan": jurusan.strip(),
+                    "keterangan": keterangan.strip(),
+                    "nominal": int(nominal),
+                    "owner": st.session_state.user
+                })
+                st.success("Data berhasil disimpan")
+                st.rerun()
 
         # ================= HAPUS =================
         st.subheader("Hapus Data")
@@ -738,14 +775,22 @@ else:
         nom = st.number_input("Nominal", min_value=0)
 
         if st.button("Simpan Pengeluaran"):
-            api_post("pengeluaran", {
-                "tanggal": str(tgl),
-                "keterangan": ket,
-                "nominal": int(nom),
-                "owner": st.session_state.user
-            })
-            st.success("Pengeluaran tersimpan")
-            st.rerun()
+
+            if not ket.strip():
+                st.warning("Keterangan wajib diisi")
+
+            elif nom <= 0:
+                st.warning("Nominal harus lebih dari 0")
+
+            else:
+                api_post("pengeluaran", {
+                    "tanggal": str(tgl),
+                    "keterangan": ket.strip(),
+                    "nominal": int(nom),
+                    "owner": st.session_state.user
+                })
+                st.success("Pengeluaran tersimpan")
+                st.rerun()
 
     # ================= LOGOUT =================
     if st.button("Logout"):
