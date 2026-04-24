@@ -571,7 +571,6 @@ if not st.session_state.login:
         if st.button("Login"):
             if not user or not pw:
                 st.warning("Username dan password wajib diisi")
-            else:
             df = pd.DataFrame(requests.get(API_URL, params={
                 "action": "get",
                 "table": "admin"
