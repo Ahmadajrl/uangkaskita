@@ -661,13 +661,13 @@ else:
         # ================= TAMBAH DATA =================
         st.subheader("Tambah Data Kas")
 
-        nama = st.text_input("Nama")
-        tanggal = st.date_input("Tanggal")
+        nama = st.text_input("Nama Lengkap")
+        tanggal = st.date_input("Tanggal Pembayaran")
         status = st.selectbox("Status", ["Tepat Waktu", "Telat"])
         kelas = st.text_input("Kelas")
         jurusan = st.text_input("Jurusan")
         keterangan = st.text_input("Keterangan (contoh : Lunas)")
-        nominal = st.number_input("Nominal", min_value=0)
+        nominal = st.number_input("Masukkan Nominal KAS", min_value=0)
 
         if st.button("Simpan Data"):
             api_post("kas", {
