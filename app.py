@@ -666,7 +666,7 @@ else:
         status = st.selectbox("Status", ["Tepat Waktu", "Telat"])
         kelas = st.text_input("Kelas")
         jurusan = st.text_input("Jurusan")
-        keterangan = st.text_input("Keterangan")
+        keterangan = st.text_input("Keterangan (contoh : Lunas)")
         nominal = st.number_input("Nominal", min_value=0)
 
         if st.button("Simpan Data"):
