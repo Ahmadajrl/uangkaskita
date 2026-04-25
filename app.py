@@ -14,7 +14,7 @@ st.set_page_config(
 )
 
 
-API_URL = "https://script.google.com/macros/s/AKfycbym98CvlKkmJ2BawYlaEEqGKkN5BTdEcmvWdfzB2B6J_zSBY8he0S1r7e70T8phQ3nR/exec"
+API_URL = "https://script.google.com/macros/s/AKfycbxBe2m5pZoJOofUKqvf7oRrAt_UARgQ3W3pVwUYFMQVwJgMsLb3pb-7jg1rOJRgm8xz/exec"
 
 # ================= GLOBAL CSS =================
 st.markdown("""
