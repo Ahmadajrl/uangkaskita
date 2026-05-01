@@ -158,37 +158,61 @@ section[data-testid="stSidebar"] > div { padding: 0 !important; }
 }
 
 /* ── Navigasi Sidebar ──────────────────────────────────────────────────── */
-.nav-btn button {
+/* Override global button style khusus untuk tombol navigasi di sidebar */
+.nav-btn > div[data-testid="stButton"] > button,
+.nav-btn div[data-testid="stButton"] > button {
     background: transparent !important;
-    border: none !important; box-shadow: none !important;
+    background-image: none !important;
+    border: none !important;
+    box-shadow: none !important;
     color: var(--text-muted) !important;
-    font-size: 14px !important; font-weight: 500 !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
     text-align: left !important;
     border-radius: var(--radius-sm) !important;
-    padding: 12px 16px !important; margin: 2px 0 !important;
+    padding: 12px 16px !important;
+    margin: 2px 0 !important;
     transition: all 0.2s !important;
+    width: 100% !important;
 }
-.nav-btn button:hover {
+.nav-btn > div[data-testid="stButton"] > button:hover,
+.nav-btn div[data-testid="stButton"] > button:hover {
     background: rgba(59,130,246,0.1) !important;
     color: var(--accent) !important;
-    transform: none !important; box-shadow: none !important;
+    transform: none !important;
+    box-shadow: none !important;
+    filter: none !important;
 }
-.nav-btn-active button {
+.nav-btn-active > div[data-testid="stButton"] > button,
+.nav-btn-active div[data-testid="stButton"] > button {
     background: rgba(59,130,246,0.15) !important;
-    border: none !important; box-shadow: none !important;
-    color: var(--accent) !important; font-weight: 600 !important;
+    background-image: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: var(--accent) !important;
+    font-weight: 600 !important;
 }
-.logout-btn button {
+
+/* Override global button style khusus untuk tombol logout */
+.logout-btn > div[data-testid="stButton"] > button,
+.logout-btn div[data-testid="stButton"] > button {
     background: rgba(244,63,94,0.08) !important;
+    background-image: none !important;
     border: 1px solid rgba(244,63,94,0.2) !important;
-    color: #f43f5e !important; box-shadow: none !important;
+    color: #f43f5e !important;
+    box-shadow: none !important;
     font-size: 14px !important;
     border-radius: var(--radius-sm) !important;
-    padding: 12px 16px !important; transition: all 0.2s !important;
+    padding: 12px 16px !important;
+    transition: all 0.2s !important;
+    width: 100% !important;
 }
-.logout-btn button:hover {
+.logout-btn > div[data-testid="stButton"] > button:hover,
+.logout-btn div[data-testid="stButton"] > button:hover {
     background: rgba(244,63,94,0.15) !important;
-    transform: none !important; box-shadow: none !important;
+    transform: none !important;
+    box-shadow: none !important;
+    filter: none !important;
 }
 
 /* ── Metric Cards ──────────────────────────────────────────────────────── */
