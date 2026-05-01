@@ -658,27 +658,27 @@ def render_sidebar():
 
         st.markdown("---")
 
-        # Menu navigasi dengan highlight aktif
-        menu_items = {
-            "dashboard":   "📊  Dashboard",
-            "pengeluaran": "💸  Pengeluaran",
-        }
-        for key, label in menu_items.items():
-            css_class = "nav-btn-active" if st.session_state.menu == key else "nav-btn"
-            st.markdown(f'<div class="{css_class}">', unsafe_allow_html=True)
-            if st.button(label, key=f"nav_{key}"):
-                st.session_state.menu = key
-                st.rerun()
-            st.markdown("</div>", unsafe_allow_html=True)
+        # Menu navigasi menggunakan radio agar tidak bentrok dengan CSS tombol global
+        menu_pilihan = st.radio(
+            "Navigasi",
+            options=["📊 Dashboard", "💸 Pengeluaran"],
+            index=0 if st.session_state.menu == "dashboard" else 1,
+            label_visibility="collapsed",
+        )
+
+        # Sinkronisasi pilihan radio ke session state
+        menu_map = {"📊 Dashboard": "dashboard", "💸 Pengeluaran": "pengeluaran"}
+        menu_baru = menu_map[menu_pilihan]
+        if menu_baru != st.session_state.menu:
+            st.session_state.menu = menu_baru
+            st.rerun()
 
         st.markdown("---")
 
         # Tombol logout
-        st.markdown('<div class="logout-btn">', unsafe_allow_html=True)
-        if st.button("🚪  Logout", key="btn_logout"):
+        if st.button("🚪 Logout", key="btn_logout", use_container_width=True):
             st.session_state.clear()
             st.rerun()
-        st.markdown("</div>", unsafe_allow_html=True)
 
 
 # ── 6b. Halaman Dashboard ────────────────────────────────────────────────────
