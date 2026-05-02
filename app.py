@@ -467,7 +467,8 @@ div[data-testid="stTextInput"] [data-testid="InputInstructions"] {
 def hash_password(p):
     return hashlib.sha256(p.encode()).hexdigest()
 
-def api_get(table):
+@st.cache_data(ttl=60)
+def api_get(table, user):
     try:
         res = requests.get(API_URL, params={
             "action": "get",
@@ -523,6 +524,7 @@ def validasi_kas(nama, kelas, jurusan, nominal):
 
     return None
 # ================= PDF =================
+@st.cache_data
 def generate_pdf(df):
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer)
@@ -572,10 +574,11 @@ if not st.session_state.login:
             if not user or not pw:
                 st.warning("Username dan password wajib diisi")
             else:
-                df = pd.DataFrame(requests.get(API_URL, params={
-                    "action": "get",
-                    "table": "admin"
-                }).json())
+                with st.spinner("Memverifikasi akun..."):
+                    df = pd.DataFrame(requests.get(API_URL, params={
+                        "action": "get",
+                        "table": "admin"
+                    }).json())
 
                 if not df.empty:
                     df["username"] = df["username"].astype(str)
@@ -589,10 +592,11 @@ if not st.session_state.login:
                     if not data.empty:
                         st.session_state.login = True
                         st.session_state.user = user
+                        st.session_state.kas_data = api_get("kas", user)
+                        st.session_state.pengeluaran_data = api_get("pengeluaran", user)
                         st.rerun()
                     else:
                         st.error("Username / Password salah")
-
     # REGISTER
     with tab2:
         user = st.text_input("Username Baru")
@@ -633,8 +637,8 @@ else:
 
     # ================= DASHBOARD =================
     if st.session_state.menu == "dashboard":
-
-        df = api_get("kas")
+        with st.spinner("Mengambil data..."):
+            df = st.session_state.kas_data
 
         if not df.empty:
 
@@ -721,6 +725,7 @@ else:
                     "nominal": int(nominal),
                     "owner": st.session_state.user
                 })
+                st.session_state.kas_data = api_get("kas",st.session_state.user)
                 st.success("Data berhasil disimpan")
                 st.rerun()
 
@@ -731,6 +736,7 @@ else:
 
         if st.button("Hapus"):
             api_delete("kas", int(id_hapus))
+            st.session_state.kas_data = api_get("kas",st.session_state.user)
             st.success("Data berhasil dihapus")
             st.rerun()
 
@@ -738,9 +744,9 @@ else:
     elif st.session_state.menu == "pengeluaran":
 
         st.title("Pengeluaran")
-
-        df_keluar = api_get("pengeluaran")
-        df_masuk = api_get("kas")
+        with st.spinner("Mengambil data pengeluaran..."):
+            df_keluar = st.session_state.pengeluaran_data
+            df_masuk = st.session_state.kas_data
 
         if not df_keluar.empty:
             df_keluar["nominal"] = pd.to_numeric(df_keluar["nominal"], errors="coerce").fillna(0)
@@ -789,6 +795,7 @@ else:
                     "nominal": int(nom),
                     "owner": st.session_state.user
                 })
+                st.session_state.pengeluaran_data = api_get("pengeluaran",st.session_state.user)
                 st.success("Pengeluaran tersimpan")
                 st.rerun()
 
