@@ -7,11 +7,10 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 from reportlab.lib import colors
 
 # ================= CONFIG =================
-st.set_page_config(page_title="KAS KITA", page_icon="💰", layout="wide")
-# Menggunakan st.secrets untuk keamanan, dengan fallback ke URL default
+st.set_page_config(page_title="KAS KITA - Multi Account", page_icon="💰", layout="wide")
 API_URL = st.secrets.get("API_URL", "https://script.google.com/macros/s/AKfycbxaG-pIQP5_-NY8zPZeE_rPMudT7-VC-UsXHZe9P4QjTRYLT2bAGFZI4VVcdgywebAX/exec")
 
-# ================= GLOBAL CSS (SUDAH DIPERBAIKI) =================
+# ================= GLOBAL CSS (CLEANED) =================
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
@@ -30,13 +29,10 @@ h1, h2, h3 { font-family: 'Syne', sans-serif !important; letter-spacing: -0.5px;
 .metric-card.gold::before  { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
 .metric-label { font-size: 11px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; }
 .metric-value { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; color: var(--text-primary); line-height: 1.1; }
-.metric-icon { position: absolute; top: 20px; right: 20px; font-size: 24px; opacity: 0.25; }
 .glass-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; backdrop-filter: blur(12px); margin-bottom: 20px; }
-.glass-card-title { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; color: var(--text-primary); margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
-.auth-wrapper { max-width: 440px; margin: 40px auto; }
-.auth-logo { text-align: center; margin-bottom: 36px; }
-.auth-logo h1 { font-family: 'Syne', sans-serif !important; font-size: 42px !important; font-weight: 800 !important; background: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin: 0 !important; }
-.auth-logo p { color: var(--text-muted); font-size: 14px; margin-top: 4px; }
+.page-header { margin-bottom: 28px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+.page-header h2 { font-family: 'Syne', sans-serif !important; font-size: 28px !important; font-weight: 800 !important; color: var(--text-primary) !important; margin: 0 0 4px !important; }
+.page-header p { color: var(--text-muted); font-size: 14px; margin: 0; }
 .sidebar-logo { padding: 28px 24px 20px; border-bottom: 1px solid var(--border); margin-bottom: 8px; }
 .sidebar-logo h2 { font-family: 'Syne', sans-serif !important; font-size: 22px !important; font-weight: 800 !important; background: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin: 0 !important; }
 .sidebar-logo .tagline { font-size: 11px; color: var(--text-muted); margin-top: 2px; letter-spacing: 0.5px; }
@@ -45,31 +41,13 @@ h1, h2, h3 { font-family: 'Syne', sans-serif !important; letter-spacing: -0.5px;
 .user-info .user-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
 .user-info .user-name { font-size: 14px; font-weight: 600; color: var(--text-primary); }
 .section-divider { height: 1px; background: var(--border); margin: 24px 0; }
-.page-header { margin-bottom: 28px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
-.page-header h2 { font-family: 'Syne', sans-serif !important; font-size: 28px !important; font-weight: 800 !important; color: var(--text-primary) !important; margin: 0 0 4px !important; }
-.page-header p { color: var(--text-muted); font-size: 14px; margin: 0; }
 div[data-testid="stTextInput"] input, div[data-testid="stNumberInput"] input, div[data-testid="stTextArea"] textarea, div[data-testid="stDateInput"] input { background: rgba(255,255,255,0.04) !important; border: 1px solid var(--border) !important; border-radius: var(--radius-sm) !important; color: var(--text-primary) !important; font-family: 'DM Sans', sans-serif !important; transition: border-color 0.2s !important; padding: 12px 14px !important; }
 div[data-testid="stTextInput"] input:focus, div[data-testid="stNumberInput"] input:focus { border-color: var(--accent) !important; box-shadow: 0 0 0 3px var(--accent-glow) !important; outline: none !important; }
 div[data-testid="stSelectbox"] > div > div { background: rgba(255,255,255,0.04) !important; border: 1px solid var(--border) !important; border-radius: var(--radius-sm) !important; color: var(--text-primary) !important; }
-div[data-testid="stTextInput"] label, div[data-testid="stNumberInput"] label, div[data-testid="stSelectbox"] label, div[data-testid="stDateInput"] label, div[data-testid="stTextArea"] label { font-size: 12px !important; font-weight: 600 !important; letter-spacing: 0.5px !important; color: var(--text-muted) !important; text-transform: uppercase !important; }
 div[data-testid="stButton"] > button[kind="primary"], div[data-testid="stButton"] > button { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important; color: white !important; border: none !important; border-radius: var(--radius-sm) !important; font-family: 'DM Sans', sans-serif !important; font-weight: 600 !important; font-size: 14px !important; padding: 12px 24px !important; width: 100% !important; transition: all 0.2s ease !important; box-shadow: 0 4px 20px rgba(59,130,246,0.3) !important; letter-spacing: 0.3px !important; }
 div[data-testid="stButton"] > button:hover { transform: translateY(-1px) !important; box-shadow: 0 8px 30px rgba(59,130,246,0.45) !important; filter: brightness(1.08) !important; }
 div[data-testid="stDownloadButton"] > button { background: rgba(255,255,255,0.05) !important; color: var(--text-primary) !important; border: 1px solid var(--border) !important; border-radius: var(--radius-sm) !important; font-family: 'DM Sans', sans-serif !important; font-weight: 500 !important; width: 100% !important; transition: all 0.2s ease !important; }
 div[data-testid="stDownloadButton"] > button:hover { border-color: var(--accent) !important; color: var(--accent) !important; background: rgba(59,130,246,0.08) !important; }
-div[data-testid="stTabs"] [data-baseweb="tab-list"] { background: rgba(255,255,255,0.03) !important; border-radius: var(--radius-sm) !important; border: 1px solid var(--border) !important; padding: 4px !important; gap: 4px !important; }
-div[data-testid="stTabs"] [data-baseweb="tab"] { border-radius: 8px !important; color: var(--text-muted) !important; font-family: 'DM Sans', sans-serif !important; font-weight: 500 !important; }
-div[data-testid="stTabs"] [aria-selected="true"] { background: linear-gradient(135deg, #3b82f6, #2563eb) !important; color: white !important; }
-div[data-testid="stDataFrame"] { border-radius: var(--radius-sm) !important; overflow: hidden !important; border: 1px solid var(--border) !important; }
-div[data-testid="stDataFrame"] table { background: var(--bg-card) !important; }
-div[data-testid="stAlert"] { border-radius: var(--radius-sm) !important; border: none !important; }
-div[data-testid="stMetric"] { background: var(--bg-card) !important; border: 1px solid var(--border) !important; border-radius: var(--radius) !important; padding: 20px !important; }
-div[data-testid="stArrowVegaLiteChart"] { border-radius: var(--radius-sm) !important; overflow: hidden !important; }
-.nav-btn button { background: transparent !important; border: none !important; box-shadow: none !important; color: var(--text-muted) !important; font-size: 14px !important; font-weight: 500 !important; text-align: left !important; border-radius: var(--radius-sm) !important; padding: 12px 16px !important; margin: 2px 0 !important; transition: all 0.2s !important; }
-.nav-btn button:hover { background: rgba(59,130,246,0.1) !important; color: var(--accent) !important; transform: none !important; box-shadow: none !important; }
-.nav-btn-active button { background: rgba(59,130,246,0.15) !important; border: none !important; box-shadow: none !important; color: var(--accent) !important; font-weight: 600 !important; }
-.logout-btn button { background: rgba(244,63,94,0.08) !important; border: 1px solid rgba(244,63,94,0.2) !important; color: #f43f5e !important; box-shadow: none !important; font-size: 14px !important; border-radius: var(--radius-sm) !important; padding: 12px 16px !important; transition: all 0.2s !important; }
-.logout-btn button:hover { background: rgba(244,63,94,0.15) !important; transform: none !important; box-shadow: none !important; }
-div[data-testid="stTextInput"] [data-testid="InputInstructions"] { display: none; }
 #MainMenu, footer, header { display: none !important; }
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -79,37 +57,41 @@ div[data-testid="stTextInput"] [data-testid="InputInstructions"] { display: none
 </style>
 """, unsafe_allow_html=True)
 
-# ================= HELPER =================
+# ================= HELPER & API (MULTI-ACCOUNT ISOLATION) =================
 def hash_password(p):
-    salt = "KAS_KITA_SALT_2024"
-    return hashlib.sha256(f"{salt}{p}".encode()).hexdigest()
+    return hashlib.sha256(f"KAS_KITA_SALT_{p}".encode()).hexdigest()
 
 @st.cache_data(ttl=60)
 def api_get(table, user):
+    """Ambil data HANYA untuk user yang sedang login"""
     try:
-        res = requests.get(API_URL, params={"action": "get", "table": table}, timeout=10)
+        res = requests.get(API_URL, params={"action": "get", "table": table, "owner": user}, timeout=10)
         res.raise_for_status()
         df = pd.DataFrame(res.json())
+        # Fallback client-side filtering jika backend belum support parameter owner
         if not df.empty and "owner" in df.columns:
-            df["owner"] = df["owner"].astype(str)
-            df = df[df["owner"] == user]  # Menggunakan parameter user, bukan session_state
-        return df
+            df = df[df["owner"].astype(str) == user]
+        return df.reset_index(drop=True)
     except requests.exceptions.RequestException as e:
-        st.error(f"Gagal mengambil data API: {e}")
+        st.error(f"Gagal mengambil  {e}")
         return pd.DataFrame()
 
-def api_post(table, data):
+def api_post(table, user, data):
+    """Simpan data dengan owner terikat ke user login"""
     try:
-        res = requests.post(API_URL, json={"action": "insert", "table": table, "data": data}, timeout=10)
+        payload = {"action": "insert", "table": table, "data": {**data, "owner": user}}
+        res = requests.post(API_URL, json=payload, timeout=10)
         res.raise_for_status()
         return True
     except requests.exceptions.RequestException as e:
         st.error(f"Gagal menyimpan  {e}")
         return False
 
-def api_delete(table, id_val):
+def api_delete(table, user, id_val):
+    """Hapus data dengan validasi ownership"""
     try:
-        res = requests.post(API_URL, json={"action": "delete", "table": table, "id": id_val}, timeout=10)
+        payload = {"action": "delete", "table": table, "id": id_val, "owner": user}
+        res = requests.post(API_URL, json=payload, timeout=10)
         res.raise_for_status()
         return True
     except requests.exceptions.RequestException as e:
@@ -128,55 +110,55 @@ def validasi_kas(nama, kelas, jurusan, nominal):
     if nominal > 1_000_000: return "Nominal terlalu besar (Maks 1 Juta)"
     return None
 
-# ================= PDF =================
+# ================= PDF GENERATOR =================
 def generate_pdf(df):
     buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer)
+    doc = SimpleDocTemplate(buffer, pagesize="A4")
     df_copy = df.copy()
-    
     if "nominal" in df_copy.columns:
         df_copy["nominal"] = pd.to_numeric(df_copy["nominal"], errors="coerce").fillna(0).astype(int)
-        
     data = [df_copy.columns.tolist()] + df_copy.values.tolist()
     table = Table(data)
     table.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,0), colors.grey),
         ('TEXTCOLOR',(0,0),(-1,0),colors.white),
         ('GRID',(0,0),(-1,-1),1,colors.black),
-        ('FONTSIZE', (0,0), (-1,-1), 9),
+        ('FONTSIZE', (0,0), (-1,-1), 8),
         ('ALIGN', (0,0), (-1,-1), 'LEFT'),
-        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
     ]))
     doc.build([table])
     buffer.seek(0)
     return buffer
 
 # ================= SESSION INIT =================
-defaults = {"login": False, "menu": "dashboard", "user": "", "kas_data": pd.DataFrame(), "pengeluaran_data": pd.DataFrame(), "delete_confirm": None}
-for key, val in defaults.items():
-    if key not in st.session_state:
-        st.session_state[key] = val
+defaults = {
+    "login": False, "user": "", "menu": "dashboard",
+    "kas_data": pd.DataFrame(), "pengeluaran_data": pd.DataFrame(),
+    "delete_confirm": None
+}
+for k, v in defaults.items():
+    st.session_state.setdefault(k, v)
 
 # ================= AUTH =================
 if not st.session_state.login:
-    st.title("Buat Akun")
-    tab1, tab2 = st.tabs(["Login", "Register"])
+    st.markdown("<div class='auth-wrapper'><div class='auth-logo'><h1>💰 KAS KITA</h1><p>Sistem Multi-Account Terisolasi</p></div></div>", unsafe_allow_html=True)
+    tab1, tab2 = st.tabs(["Login", "Daftar Akun"])
     
     with tab1:
         user = st.text_input("Username")
         pw = st.text_input("Password", type="password")
-        if st.button("Login", use_container_width=True):
+        if st.button("Masuk", use_container_width=True):
             if not user or not pw:
                 st.warning("Username dan password wajib diisi")
             else:
-                with st.spinner("Memverifikasi akun..."):
+                with st.spinner("Memverifikasi..."):
                     try:
                         res = requests.get(API_URL, params={"action": "get", "table": "admin"}, timeout=10)
                         res.raise_for_status()
                         df = pd.DataFrame(res.json())
-                    except Exception as e:
-                        st.error(f"Gagal terhubung: {e}")
-                        df = pd.DataFrame()
+                    except:
+                        st.error("Gagal terhubung ke server")
+                        st.stop()
                         
                 if not df.empty:
                     df["username"] = df["username"].astype(str)
@@ -191,60 +173,42 @@ if not st.session_state.login:
                     else:
                         st.error("Username / Password salah")
                 else:
-                    st.error("Database admin kosong atau gagal terhubung.")
+                    st.error("Database admin kosong")
 
     with tab2:
         user = st.text_input("Username Baru")
         pw = st.text_input("Password Baru", type="password")
         if st.button("Daftar", use_container_width=True):
-            if not user or not pw:
-                st.warning("Username & Password wajib diisi")
-            elif len(pw) < 6:
-                st.warning("Password minimal 6 karakter")
+            if not user or not pw: st.warning("Wajib diisi")
+            elif len(pw) < 6: st.warning("Password minimal 6 karakter")
             else:
-                if api_post("admin", {"username": user.strip(), "password": hash_password(pw)}):
-                    st.success("Akun berhasil dibuat. Silakan login.")
+                if api_post("admin", user.strip(), {"username": user.strip(), "password": hash_password(pw)}):
+                    st.success("Akun dibuat! Silakan login.")
                 else:
-                    st.error("Gagal mendaftarkan akun.")
+                    st.error("Gagal membuat akun")
 
 # ================= MAIN APP =================
 else:
     with st.sidebar:
-        st.markdown("""
-        <div class="sidebar-logo">
-            <h2>💰 KAS KITA</h2>
-            <p class="tagline">Manajemen Keuangan Kelas</p>
-        </div>
-        """, unsafe_allow_html=True)
-        
         st.markdown(f"""
+        <div class="sidebar-logo"><h2>💰 KAS KITA</h2><p class="tagline">Database Terisolasi</p></div>
         <div class="sidebar-user">
             <div class="user-avatar">{st.session_state.user[0].upper()}</div>
-            <div class="user-info">
-                <div class="user-label">Sedang Login</div>
-                <div class="user-name">{st.session_state.user}</div>
-            </div>
+            <div class="user-info"><div class="user-label">AKTIF</div><div class="user-name">{st.session_state.user}</div></div>
         </div>
         """, unsafe_allow_html=True)
-        
         st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
         
         menu = st.radio("Menu", ["Dashboard", "Pengeluaran"], key="sidebar_menu")
         st.session_state.menu = menu.lower()
         
         st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
-        
-        if st.button("🚪 Logout", type="secondary", use_container_width=True):
+        if st.button("🚪 Keluar", type="secondary", use_container_width=True):
             for k in ["login", "user", "menu", "kas_data", "pengeluaran_data", "delete_confirm"]:
                 st.session_state.pop(k, None)
             st.rerun()
 
-    st.markdown(f"""
-    <div class="page-header">
-        <h2>{menu}</h2>
-        <p>Kelola data keuangan dengan mudah dan transparan.</p>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown(f"""<div class="page-header"><h2>{menu.title()}</h2><p>Data hanya terlihat oleh akun: <b>{st.session_state.user}</b></p></div>""", unsafe_allow_html=True)
 
     # ================= DASHBOARD =================
     if st.session_state.menu == "dashboard":
@@ -256,86 +220,52 @@ else:
                 df["bulan"] = df["tanggal"].dt.strftime("%B %Y")
             df["nominal"] = pd.to_numeric(df["nominal"], errors="coerce").fillna(0)
             
-            bulan_list = ["Semua"]
-            if "bulan" in df.columns:
-                bulan_list += sorted(df["bulan"].dropna().unique().tolist())
-                
+            bulan_list = ["Semua"] + sorted(df["bulan"].dropna().unique().tolist())
             bulan = st.selectbox("Filter Bulan", bulan_list)
-            if bulan != "Semua":
-                df = df[df["bulan"] == bulan]
-                
-            total_kas = df["nominal"].sum()
-            st.metric("Total Kas", rupiah(total_kas))
+            if bulan != "Semua": df = df[df["bulan"] == bulan]
             
-            if "bulan" in df.columns and not df.empty:
-                grafik = df.groupby("bulan")["nominal"].sum()
-                st.bar_chart(grafik, use_container_width=True)
-                
-            st.subheader("Data Kas")
-            st.dataframe(df, use_container_width=True, hide_index=True)
+            st.metric("Total Kas Masuk", rupiah(df["nominal"].sum()))
+            if "bulan" in df.columns: st.bar_chart(df.groupby("bulan")["nominal"].sum(), use_container_width=True)
             
-            pdf_buffer = generate_pdf(df)
-            st.download_button("📥 Download PDF", pdf_buffer, "kas.pdf", "application/pdf")
-            
-            if "nama" in df.columns:
-                st.subheader("Statistik Siswa")
-                siswa_list = df["nama"].dropna().unique().tolist()
-                if siswa_list:
-                    siswa = st.selectbox("Pilih Siswa", siswa_list)
-                    data_siswa = df[df["nama"] == siswa]
-                    if not data_siswa.empty and "status" in data_siswa.columns:
-                        hasil = data_siswa["status"].value_counts()
-                        st.bar_chart(hasil, use_container_width=True)
+            st.subheader("Data Kas"); st.dataframe(df, use_container_width=True, hide_index=True)
+            st.download_button("📥 Export PDF", generate_pdf(df), f"kas_{st.session_state.user}.pdf", "application/pdf")
         else:
-            st.warning("Belum ada data kas.")
+            st.warning("Belum ada data kas untuk akun ini.")
 
         st.subheader("Tambah Data Kas")
-        col1, col2 = st.columns(2)
-        with col1:
+        c1, c2 = st.columns(2)
+        with c1:
             nama = st.text_input("Nama Lengkap")
             kelas = st.text_input("Kelas")
             jurusan = st.text_input("Jurusan")
-        with col2:
-            tanggal = st.date_input("Tanggal Pembayaran")
+        with c2:
+            tgl = st.date_input("Tanggal")
             status = st.selectbox("Status", ["Tepat Waktu", "Telat"])
             nominal = st.number_input("Nominal", min_value=0, step=1000)
-            
-        keterangan = st.text_input("Keterangan (contoh: Lunas)")
+        ket = st.text_input("Keterangan")
         
-        if st.button("Simpan Data", use_container_width=True):
-            error = validasi_kas(nama, kelas, jurusan, nominal)
-            if error:
-                st.error(f"❌ {error}")
-            else:
-                if api_post("kas", {
-                    "nama": nama.strip(), "tanggal": str(tanggal), "status": status,
-                    "kelas": kelas.strip(), "jurusan": jurusan.strip(), "keterangan": keterangan.strip(),
-                    "nominal": int(nominal), "owner": st.session_state.user
-                }):
-                    st.session_state.kas_data = api_get("kas", st.session_state.user)
-                    st.success("Data berhasil disimpan")
-                    st.rerun()
+        if st.button("Simpan", use_container_width=True):
+            err = validasi_kas(nama, kelas, jurusan, nominal)
+            if err: st.error(f"❌ {err}")
+            elif api_post("kas", st.session_state.user, {"nama": nama.strip(), "tanggal": str(tgl), "status": status, "kelas": kelas.strip(), "jurusan": jurusan.strip(), "keterangan": ket.strip(), "nominal": int(nominal)}):
+                st.session_state.kas_data = api_get("kas", st.session_state.user)
+                st.success("Tersimpan"); st.rerun()
 
         st.subheader("Hapus Data Kas")
         if not st.session_state.kas_data.empty and "id" in st.session_state.kas_data.columns:
-            df_hapus = st.session_state.kas_data.copy()
-            df_hapus["label"] = df_hapus.apply(lambda x: f"ID: {x['id']} | {x.get('nama', '-')} - {rupiah(x['nominal'])}", axis=1)
-            
-            id_hapus = st.selectbox("Pilih Data untuk Dihapus", df_hapus["id"], format_func=lambda x: df_hapus[df_hapus["id"]==x]["label"].iloc[0])
-            
-            if st.button("🗑️ Hapus Data Terpilih", type="primary", use_container_width=True):
+            dh = st.session_state.kas_data.copy()
+            dh["label"] = dh.apply(lambda x: f"ID: {x['id']} | {x.get('nama','?')} - {rupiah(x['nominal'])}", axis=1)
+            id_hapus = st.selectbox("Pilih Data", dh["id"], format_func=lambda x: dh[dh["id"]==x]["label"].iloc[0])
+            if st.button("🗑️ Hapus", type="primary", use_container_width=True):
                 st.session_state.delete_confirm = id_hapus
                 st.rerun()
-                
             if st.session_state.delete_confirm == id_hapus:
-                st.warning("⚠️ Tindakan ini tidak dapat dibatalkan. Ketik `HAPUS` untuk konfirmasi.")
-                conf = st.text_input("Konfirmasi")
-                if conf.upper() == "HAPUS" and st.button("Ya, Hapus Sekarang", type="primary"):
-                    if api_delete("kas", int(id_hapus)):
+                st.warning("⚠️ Ketik `HAPUS` untuk konfirmasi")
+                if st.text_input("Konfirmasi").upper() == "HAPUS" and st.button("Ya, Hapus!", type="primary"):
+                    if api_delete("kas", st.session_state.user, int(id_hapus)):
                         st.session_state.kas_data = api_get("kas", st.session_state.user)
                         st.session_state.delete_confirm = None
-                        st.success("Data berhasil dihapus")
-                        st.rerun()
+                        st.success("Dihapus"); st.rerun()
         else:
             st.info("Tidak ada data untuk dihapus.")
 
@@ -344,44 +274,29 @@ else:
         df_keluar = st.session_state.pengeluaran_data.copy()
         df_masuk = st.session_state.kas_data.copy()
         
-        if not df_keluar.empty:
-            df_keluar["nominal"] = pd.to_numeric(df_keluar["nominal"], errors="coerce").fillna(0)
-        if not df_masuk.empty:
-            df_masuk["nominal"] = pd.to_numeric(df_masuk["nominal"], errors="coerce").fillna(0)
-            
-        total_masuk = df_masuk["nominal"].sum() if not df_masuk.empty else 0
-        total_keluar = df_keluar["nominal"].sum() if not df_keluar.empty else 0
+        df_keluar["nominal"] = pd.to_numeric(df_keluar["nominal"], errors="coerce").fillna(0) if not df_keluar.empty else 0
+        df_masuk["nominal"] = pd.to_numeric(df_masuk["nominal"], errors="coerce").fillna(0) if not df_masuk.empty else 0
+        
+        total_masuk = df_masuk.sum() if isinstance(df_masuk, pd.Series) else df_masuk["nominal"].sum()
+        total_keluar = df_keluar.sum() if isinstance(df_keluar, pd.Series) else df_keluar["nominal"].sum()
         saldo = total_masuk - total_keluar
         
-        col1, col2, col3 = st.columns(3)
-        col1.metric("Total Kas Masuk", rupiah(total_masuk))
-        col2.metric("Total Pengeluaran", rupiah(total_keluar))
-        col3.metric("Sisa Saldo", rupiah(saldo))
+        c1,c2,c3 = st.columns(3)
+        c1.metric("Kas Masuk", rupiah(total_masuk)); c2.metric("Pengeluaran", rupiah(total_keluar)); c3.metric("Sisa Saldo", rupiah(saldo))
         
         if not df_keluar.empty:
-            st.subheader("Riwayat Pengeluaran")
-            st.dataframe(df_keluar, use_container_width=True, hide_index=True)
-            pdf_buffer = generate_pdf(df_keluar)
-            st.download_button("📥 Download PDF Pengeluaran", pdf_buffer, "pengeluaran.pdf", "application/pdf")
+            st.subheader("Riwayat"); st.dataframe(df_keluar, use_container_width=True, hide_index=True)
+            st.download_button("📥 Export PDF", generate_pdf(df_keluar), f"pengeluaran_{st.session_state.user}.pdf", "application/pdf")
         else:
-            st.info("Belum ada riwayat pengeluaran.")
+            st.info("Belum ada pengeluaran.")
             
         st.subheader("Tambah Pengeluaran")
-        tgl = st.date_input("Tanggal")
-        ket = st.text_input("Keterangan")
-        nom = st.number_input("Nominal Pengeluaran", min_value=0, step=1000)
+        tgl = st.date_input("Tanggal"); ket = st.text_input("Keterangan"); nom = st.number_input("Nominal", min_value=0, step=1000)
         
         if st.button("Simpan Pengeluaran", use_container_width=True):
-            if not ket.strip():
-                st.warning("Keterangan wajib diisi")
-            elif nom <= 0:
-                st.warning("Nominal harus lebih dari 0")
-            elif nom > saldo:
-                st.error(f"⚠️ Saldo tidak cukup! Sisa saldo: {rupiah(saldo)}")
-            else:
-                if api_post("pengeluaran", {
-                    "tanggal": str(tgl), "keterangan": ket.strip(), "nominal": int(nom), "owner": st.session_state.user
-                }):
-                    st.session_state.pengeluaran_data = api_get("pengeluaran", st.session_state.user)
-                    st.success("Pengeluaran tersimpan")
-                    st.rerun()
+            if not ket.strip(): st.warning("Keterangan wajib")
+            elif nom <= 0: st.warning("Nominal harus > 0")
+            elif nom > saldo: st.error(f"Saldo tidak cukup! Sisa: {rupiah(saldo)}")
+            elif api_post("pengeluaran", st.session_state.user, {"tanggal": str(tgl), "keterangan": ket.strip(), "nominal": int(nom)}):
+                st.session_state.pengeluaran_data = api_get("pengeluaran", st.session_state.user)
+                st.success("Tersimpan"); st.rerun()
