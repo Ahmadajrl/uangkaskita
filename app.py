@@ -9,7 +9,7 @@ from reportlab.lib import colors
 # ================= CONFIG =================
 st.set_page_config(page_title="KAS KITA", page_icon="💰", layout="wide")
 # Menggunakan st.secrets untuk keamanan, dengan fallback ke URL default
-API_URL = st.secrets.get("API_URL", "https://script.google.com/macros/s/AKfycbxBe2m5pZoJOofUKqvf7oRrAt_UARgQ3W3pVwUYFMQVwJgMsLb3pb-7jg1rOJRgm8xz/exec")
+API_URL = st.secrets.get("API_URL", "https://script.google.com/macros/s/AKfycbxaG-pIQP5_-NY8zPZeE_rPMudT7-VC-UsXHZe9P4QjTRYLT2bAGFZI4VVcdgywebAX/exec")
 
 # ================= GLOBAL CSS (SUDAH DIPERBAIKI) =================
 st.markdown("""
